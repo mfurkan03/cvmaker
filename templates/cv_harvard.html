@@ -10,43 +10,54 @@
   {# ── Personal header ── #}
   {% if sections.personal %}
   {% set p = sections.personal %}
-  <h1 class="cv-name">{{ p.name }}</h1>
-  {% if p.title %}<div class="cv-title">{{ p.title }}</div>{% endif %}
+  <h1 class="cv-name{% if editable %} cv-editable{% endif %}"
+      {% if editable %}contenteditable="true" data-cv-path="personal.name"{% endif %}>{{ p.name }}</h1>
+  {% if p.title %}
+  <div class="cv-title{% if editable %} cv-editable{% endif %}"
+       {% if editable %}contenteditable="true" data-cv-path="personal.title"{% endif %}>{{ p.title }}</div>
+  {% endif %}
   <div class="cv-contact">
-    {%- set parts = [] -%}
-    {%- if p.email    %}{% set _ = parts.append(p.email)    %}{% endif -%}
-    {%- if p.phone    %}{% set _ = parts.append(p.phone)    %}{% endif -%}
-    {%- if p.location %}{% set _ = parts.append(p.location) %}{% endif -%}
-    {%- if p.linkedin %}{% set _ = parts.append(p.linkedin) %}{% endif -%}
-    {%- if p.github   %}{% set _ = parts.append(p.github)   %}{% endif -%}
-    {{ parts | join(' &nbsp;|&nbsp; ') }}
+    {%- for field_name, field_val in [('email', p.email), ('phone', p.phone), ('location', p.location), ('linkedin', p.linkedin), ('github', p.github)] if field_val -%}
+      {%- if not loop.first %}&nbsp;|&nbsp;{% endif -%}
+      <span{% if editable %} class="cv-editable" contenteditable="true" data-cv-path="personal.{{ field_name }}"{% endif %}>{{ field_val }}</span>
+    {%- endfor -%}
   </div>
   {% endif %}
 
   {# ── Summary ── #}
   {% if sections.summary %}
   <div class="cv-section-heading">Summary</div>
-  <p class="cv-summary">{{ sections.summary }}</p>
+  <p class="cv-summary{% if editable %} cv-editable{% endif %}"
+     {% if editable %}contenteditable="true" data-cv-path="summary"{% endif %}>{{ sections.summary }}</p>
   {% endif %}
 
   {# ── Education ── #}
   {% if sections.education %}
   <div class="cv-section-heading">Education</div>
   {% for e in sections.education %}
+  {% set ei = loop.index0 %}
   <div class="cv-entry">
     <div class="cv-entry-row">
-      <span class="cv-entry-org">{{ e.institution }}</span>
-      <span class="cv-entry-date">{{ e.date }}</span>
+      <span class="cv-entry-org{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="education.{{ ei }}.institution"{% endif %}>{{ e.institution }}</span>
+      <span class="cv-entry-date{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="education.{{ ei }}.date"{% endif %}>{{ e.date }}</span>
     </div>
     {% if e.degree or e.location %}
     <div class="cv-entry-row">
-      <span class="cv-entry-title">{{ e.degree }}</span>
-      {% if e.location %}<span class="cv-entry-loc">{{ e.location }}</span>{% endif %}
+      <span class="cv-entry-title{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="education.{{ ei }}.degree"{% endif %}>{{ e.degree }}</span>
+      {% if e.location %}
+      <span class="cv-entry-loc{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="education.{{ ei }}.location"{% endif %}>{{ e.location }}</span>
+      {% endif %}
     </div>
     {% endif %}
     {% if e.bullets %}
     <ul class="cv-bullets">
-      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+      {% for b in e.bullets %}
+      <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="education.{{ ei }}.bullets.{{ loop.index0 }}"{% endif %}>{{ b }}</li>
+      {% endfor %}
     </ul>
     {% endif %}
   </div>
@@ -57,18 +68,27 @@
   {% if sections.experience %}
   <div class="cv-section-heading">Experience</div>
   {% for e in sections.experience %}
+  {% set ei = loop.index0 %}
   <div class="cv-entry">
     <div class="cv-entry-row">
-      <span class="cv-entry-org">{{ e.organization }}</span>
-      <span class="cv-entry-date">{{ e.date }}</span>
+      <span class="cv-entry-org{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="experience.{{ ei }}.organization"{% endif %}>{{ e.organization }}</span>
+      <span class="cv-entry-date{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="experience.{{ ei }}.date"{% endif %}>{{ e.date }}</span>
     </div>
     <div class="cv-entry-row">
-      <span class="cv-entry-title">{{ e.title }}</span>
-      {% if e.location %}<span class="cv-entry-loc">{{ e.location }}</span>{% endif %}
+      <span class="cv-entry-title{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="experience.{{ ei }}.title"{% endif %}>{{ e.title }}</span>
+      {% if e.location %}
+      <span class="cv-entry-loc{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="experience.{{ ei }}.location"{% endif %}>{{ e.location }}</span>
+      {% endif %}
     </div>
     {% if e.bullets %}
     <ul class="cv-bullets">
-      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+      {% for b in e.bullets %}
+      <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="experience.{{ ei }}.bullets.{{ loop.index0 }}"{% endif %}>{{ b }}</li>
+      {% endfor %}
     </ul>
     {% endif %}
   </div>
@@ -79,20 +99,29 @@
   {% if sections.projects %}
   <div class="cv-section-heading">Projects</div>
   {% for e in sections.projects %}
+  {% set ei = loop.index0 %}
   <div class="cv-entry">
     <div class="cv-entry-row">
-      <span class="cv-entry-org">{{ e.name }}</span>
-      {% if e.date %}<span class="cv-entry-date">{{ e.date }}</span>{% endif %}
+      <span class="cv-entry-org{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="projects.{{ ei }}.name"{% endif %}>{{ e.name }}</span>
+      {% if e.date %}
+      <span class="cv-entry-date{% if editable %} cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="projects.{{ ei }}.date"{% endif %}>{{ e.date }}</span>
+      {% endif %}
     </div>
     {% if e.tech %}
-    <div class="cv-entry-tech">{{ e.tech }}</div>
+    <div class="cv-entry-tech{% if editable %} cv-editable{% endif %}"
+         {% if editable %}contenteditable="true" data-cv-path="projects.{{ ei }}.tech"{% endif %}>{{ e.tech }}</div>
     {% endif %}
     {% if e.url %}
-    <div class="cv-entry-url">{{ e.url }}</div>
+    <div class="cv-entry-url{% if editable %} cv-editable{% endif %}"
+         {% if editable %}contenteditable="true" data-cv-path="projects.{{ ei }}.url"{% endif %}>{{ e.url }}</div>
     {% endif %}
     {% if e.bullets %}
     <ul class="cv-bullets">
-      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+      {% for b in e.bullets %}
+      <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="projects.{{ ei }}.bullets.{{ loop.index0 }}"{% endif %}>{{ b }}</li>
+      {% endfor %}
     </ul>
     {% endif %}
   </div>
@@ -108,12 +137,16 @@
       {% if vals %}
       <tr>
         <td class="cv-skills-cat">{{ cat }}:</td>
-        <td>{{ vals }}</td>
+        <td class="{% if editable %}cv-editable{% endif %}"
+            {% if editable %}contenteditable="true" data-cv-path="skills.{{ cat }}"{% endif %}>{{ vals }}</td>
       </tr>
       {% endif %}
       {% endfor %}
     {% else %}
-    <tr><td>{{ sections.skills }}</td></tr>
+    <tr>
+      <td class="{% if editable %}cv-editable{% endif %}"
+          {% if editable %}contenteditable="true" data-cv-path="skills"{% endif %}>{{ sections.skills }}</td>
+    </tr>
     {% endif %}
   </table>
   {% endif %}
@@ -122,7 +155,9 @@
   {% if sections.certifications %}
   <div class="cv-section-heading">Certifications</div>
   <ul class="cv-flat-list">
-    {% for item in sections.certifications %}<li>{{ item }}</li>{% endfor %}
+    {% for item in sections.certifications %}
+    <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="certifications.{{ loop.index0 }}"{% endif %}>{{ item }}</li>
+    {% endfor %}
   </ul>
   {% endif %}
 
@@ -130,7 +165,9 @@
   {% if sections.awards %}
   <div class="cv-section-heading">Awards</div>
   <ul class="cv-flat-list">
-    {% for item in sections.awards %}<li>{{ item }}</li>{% endfor %}
+    {% for item in sections.awards %}
+    <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="awards.{{ loop.index0 }}"{% endif %}>{{ item }}</li>
+    {% endfor %}
   </ul>
   {% endif %}
 
@@ -138,14 +175,17 @@
   {% if sections.publications %}
   <div class="cv-section-heading">Publications</div>
   <ul class="cv-flat-list">
-    {% for item in sections.publications %}<li>{{ item }}</li>{% endfor %}
+    {% for item in sections.publications %}
+    <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="publications.{{ loop.index0 }}"{% endif %}>{{ item }}</li>
+    {% endfor %}
   </ul>
   {% endif %}
 
   {# ── Research interests ── #}
   {% if sections.research_interests %}
   <div class="cv-section-heading">Research Interests</div>
-  <p class="cv-plain">{{ sections.research_interests }}</p>
+  <p class="cv-plain{% if editable %} cv-editable{% endif %}"
+     {% if editable %}contenteditable="true" data-cv-path="research_interests"{% endif %}>{{ sections.research_interests }}</p>
   {% endif %}
 
   {# ── Any extra sections the agent added ── #}
@@ -154,10 +194,13 @@
   {% if key not in known and val %}
   <div class="cv-section-heading">{{ key }}</div>
   {% if val is string %}
-  <p class="cv-plain">{{ val }}</p>
+  <p class="cv-plain{% if editable %} cv-editable{% endif %}"
+     {% if editable %}contenteditable="true" data-cv-path="{{ key }}"{% endif %}>{{ val }}</p>
   {% elif val is iterable %}
   <ul class="cv-flat-list">
-    {% for item in val %}<li>{{ item }}</li>{% endfor %}
+    {% for item in val %}
+    <li {% if editable %}class="cv-editable" contenteditable="true" data-cv-path="{{ key }}.{{ loop.index0 }}"{% endif %}>{{ item }}</li>
+    {% endfor %}
   </ul>
   {% endif %}
   {% endif %}

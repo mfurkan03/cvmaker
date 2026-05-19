@@ -64,9 +64,6 @@ def test_render_cv_pdf_turkish():
     assert result[:4] == b"%PDF"
 
 
-import pytest
-
-@pytest.mark.xfail(reason="Template gets contenteditable attrs in Task 3", strict=True)
 def test_render_cv_html_editable_has_contenteditable_and_paths():
     from app.pdf import render_cv_html
     sections = {
