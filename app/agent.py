@@ -24,25 +24,28 @@ def _extract_json(content: str) -> dict:
         content = content.split("```json")[1].split("```")[0].strip()
     elif "```" in content:
         content = content.split("```")[1].split("```")[0].strip()
+    def _unwrap(result):
+        """Accept a dict directly, or unwrap a single-element list containing a dict."""
+        if isinstance(result, dict):
+            return result
+        if isinstance(result, list) and len(result) == 1 and isinstance(result[0], dict):
+            return result[0]
+        raise ValueError(f"Expected a JSON object, got {type(result).__name__}.")
+
     # Try direct parse first
     try:
-        result = json.loads(content)
-        if not isinstance(result, dict):
-            raise ValueError(f"Expected a JSON object, got {type(result).__name__}.")
-        return result
+        return _unwrap(json.loads(content))
     except json.JSONDecodeError:
         pass
-    # Find the outermost {...} block
-    start = content.find("{")
-    end = content.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        try:
-            result = json.loads(content[start:end + 1])
-            if not isinstance(result, dict):
-                raise ValueError(f"Expected a JSON object, got {type(result).__name__}.")
-            return result
-        except json.JSONDecodeError:
-            pass
+    # Find the outermost { or [ block
+    for open_ch, close_ch in [("{", "}"), ("[", "]")]:
+        start = content.find(open_ch)
+        end = content.rfind(close_ch)
+        if start != -1 and end != -1 and end > start:
+            try:
+                return _unwrap(json.loads(content[start:end + 1]))
+            except (json.JSONDecodeError, ValueError):
+                pass
     raise ValueError(f"Could not extract valid JSON from model output. First 300 chars: {content[:300]}")
 
 
@@ -286,13 +289,31 @@ def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, b
     ]
 
     for _round in range(MAX_TOOL_ROUNDS):
-        response = _call(
-            model=model,
-            messages=messages,
-            tools=_TOOLS,
-            tool_choice="auto",
-            temperature=0.3,
-        )
+        try:
+            response = _call(
+                model=model,
+                messages=messages,
+                tools=_TOOLS,
+                tool_choice="auto",
+                temperature=0.3,
+            )
+        except BadRequestError as exc:
+            # Some models (e.g. Llama 4 Scout) emit the final CV as a malformed
+            # tool call instead of plain text. Groq rejects it, but the CV JSON
+            # is in failed_generation — try to recover it.
+            failed = ""
+            try:
+                body = exc.body
+                if isinstance(body, dict):
+                    failed = body.get("error", {}).get("failed_generation", "")
+            except Exception:
+                pass
+            if not failed:
+                raise
+            try:
+                return _extract_json(failed), used_fallback
+            except ValueError:
+                raise ValueError(f"Agent returned invalid JSON: {exc}") from exc
 
         msg = response.choices[0].message
 
