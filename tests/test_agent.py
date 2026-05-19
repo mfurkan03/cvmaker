@@ -112,3 +112,42 @@ def test_merge_into_memory_raises_on_missing_keys():
             assert False, "Should have raised ValueError"
         except ValueError as exc:
             assert "missing" in str(exc).lower() or "report" in str(exc).lower()
+
+
+def test_refine_cv_section_applies_instruction():
+    from app.agent import refine_cv_section
+    original = {
+        "personal": {"name": "Test", "title": "Dev", "email": "", "phone": "", "location": "", "linkedin": "", "github": ""},
+        "summary": "A developer.", "education": [], "experience": [], "projects": [],
+        "skills": {}, "certifications": [], "awards": [], "notes": "",
+    }
+    updated = {**original, "summary": "A senior developer with 5 years of experience."}
+    with patch("app.agent.client") as mock_client:
+        mock_client.chat.completions.with_raw_response.create.return_value = _make_raw_response(json.dumps(updated))
+        result = refine_cv_section(original, "expand the summary", "llama-3.3-70b-versatile")
+    assert result["summary"] == "A senior developer with 5 years of experience."
+
+
+def test_refine_cv_section_raises_on_bad_json():
+    from app.agent import refine_cv_section
+    original = {
+        "personal": {}, "summary": "", "education": [], "experience": [], "projects": [],
+        "skills": {}, "certifications": [], "awards": [], "notes": "",
+    }
+    with patch("app.agent.client") as mock_client:
+        mock_client.chat.completions.with_raw_response.create.return_value = _make_raw_response("not json at all")
+        with pytest.raises(ValueError):
+            refine_cv_section(original, "change something", "llama-3.3-70b-versatile")
+
+
+def test_refine_cv_section_raises_on_unexpected_keys():
+    from app.agent import refine_cv_section
+    original = {
+        "personal": {}, "summary": "", "education": [], "experience": [], "projects": [],
+        "skills": {}, "certifications": [], "awards": [], "notes": "",
+    }
+    bad = {**original, "extra_key": "value"}
+    with patch("app.agent.client") as mock_client:
+        mock_client.chat.completions.with_raw_response.create.return_value = _make_raw_response(json.dumps(bad))
+        with pytest.raises(ValueError):
+            refine_cv_section(original, "add something", "llama-3.3-70b-versatile")
