@@ -13,6 +13,8 @@ from app.agent import generate_cv, merge_into_memory
 from app.pdf import render_cv_pdf
 from app.ingest import extract_text
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
 app = FastAPI(
     title="CV Maker",
     version="0.1.0",
@@ -50,7 +52,10 @@ async def update_memory_data(data: dict):
 @app.post("/memory/ingest/text")
 async def ingest_text(text: str = Form(...)):
     current = load_memory()
-    updated = merge_into_memory(text, current)
+    try:
+        updated = merge_into_memory(text, current)
+    except (RuntimeError, ValueError) as exc:
+        return JSONResponse(status_code=502, content={"error": str(exc)})
     save_memory(updated)
     return {"status": "ok", "message": "Memory updated successfully."}
 
@@ -58,20 +63,28 @@ async def ingest_text(text: str = Form(...)):
 @app.post("/memory/ingest/file")
 async def ingest_file(file: UploadFile = File(...)):
     content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        return JSONResponse(status_code=413, content={"error": "File too large. Maximum size is 10 MB."})
     try:
         text = extract_text(content, file.filename)
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
     current = load_memory()
-    updated = merge_into_memory(text, current)
+    try:
+        updated = merge_into_memory(text, current)
+    except (RuntimeError, ValueError) as exc:
+        return JSONResponse(status_code=502, content={"error": str(exc)})
     save_memory(updated)
     return {"status": "ok", "message": f"Extracted and merged {file.filename} into memory."}
 
 
 @app.post("/generate")
 async def generate(target: str = Form(...), language: str = Form("English")):
-    cv_sections, used_fallback = generate_cv(target, language)
-    pdf_bytes = render_cv_pdf(cv_sections, language)
+    try:
+        cv_sections, used_fallback = generate_cv(target, language)
+        pdf_bytes = render_cv_pdf(cv_sections, language)
+    except (RuntimeError, ValueError) as exc:
+        return JSONResponse(status_code=502, content={"error": str(exc)})
     headers = {"Content-Disposition": "attachment; filename=cv.pdf"}
     if used_fallback:
         headers["X-Search-Fallback"] = "true"
