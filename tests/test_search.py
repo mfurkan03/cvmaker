@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 def test_search_web_returns_text_and_fallback_flag():
