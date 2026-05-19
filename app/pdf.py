@@ -1,5 +1,8 @@
+import logging
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
+
+logger = logging.getLogger(__name__)
 
 _BASE = Path(__file__).resolve().parent.parent
 _env = Environment(loader=FileSystemLoader(str(_BASE / "templates")))
@@ -106,5 +109,6 @@ def render_cv_pdf(sections: dict, language: str) -> bytes:
     html_content = _render_html(sections, language)
     try:
         return _render_via_weasyprint(html_content)
-    except Exception:
+    except OSError as exc:
+        logger.info("WeasyPrint unavailable (GTK not installed), using fpdf2 fallback: %s", exc)
         return _render_via_fpdf2(sections, language)
