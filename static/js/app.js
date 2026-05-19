@@ -9,6 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     generateForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      // Revoke any previous blob URL to avoid memory leaks
+      if (downloadEl.href && downloadEl.href.startsWith("blob:")) {
+        URL.revokeObjectURL(downloadEl.href);
+        downloadEl.href = "#";
+      }
       btn.disabled = true;
       btn.textContent = "Generating...";
       statusEl.textContent = "Agent is working — this may take 15–30 seconds...";
@@ -88,8 +93,13 @@ document.addEventListener("DOMContentLoaded", () => {
   async function refreshMemoryDisplay() {
     const display = document.getElementById("memory-display");
     if (!display) return;
-    const resp = await fetch("/memory/data");
-    const data = await resp.json();
-    display.textContent = JSON.stringify(data, null, 2);
+    try {
+      const resp = await fetch("/memory/data");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      display.textContent = JSON.stringify(data, null, 2);
+    } catch (_) {
+      // silently ignore refresh errors — stale display is acceptable
+    }
   }
 });

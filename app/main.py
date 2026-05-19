@@ -34,7 +34,7 @@ async def memory_page(request: Request):
     mem = load_memory()
     return templates.TemplateResponse(
         "memory.html",
-        {"request": request, "memory": mem, "memory_json": json.dumps(mem, indent=2, ensure_ascii=False)},
+        {"request": request, "memory": mem, "memory_json": json.dumps(mem, indent=2)},
     )
 
 
