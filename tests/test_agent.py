@@ -81,6 +81,23 @@ def test_merge_into_memory_command_mode():
     assert "certifications" in report
 
 
+def test_chat_with_memory_returns_updated_history():
+    from app.agent import chat_with_memory
+    current = {"personal": {"name": "Test"}, "education": [], "notes": ""}
+    response_json = json.dumps({
+        "memory": {"personal": {"name": "Test"}, "education": [], "notes": "likes Python"},
+        "report": "Added note: likes Python.",
+    })
+    with patch("app.agent.client") as mock_client:
+        mock_client.chat.completions.create.return_value = _make_groq_response(response_json)
+        updated, report, history = chat_with_memory([], "I like Python", current)
+    assert updated["notes"] == "likes Python"
+    assert "Python" in report
+    assert len(history) == 2
+    assert history[0]["role"] == "user"
+    assert history[1]["role"] == "assistant"
+
+
 def test_merge_into_memory_raises_on_missing_keys():
     from app.agent import merge_into_memory
     current = {"personal": {"name": "Test"}}

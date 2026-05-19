@@ -46,24 +46,80 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Ingest text form ---
-  const ingestTextForm = document.getElementById("ingest-text-form");
-  if (ingestTextForm) {
-    const statusEl = document.getElementById("ingest-text-status");
-    ingestTextForm.addEventListener("submit", async (e) => {
+  // --- Memory chat ---
+  const chatForm = document.getElementById("chat-form");
+  if (chatForm) {
+    let chatHistory = [];
+    const chatLog = document.getElementById("chat-log");
+    const chatInput = document.getElementById("chat-input");
+    const chatBtn = document.getElementById("chat-btn");
+    const chatStatus = document.getElementById("chat-status");
+    const undoBtn = document.getElementById("undo-btn");
+    const clearChatBtn = document.getElementById("clear-chat-btn");
+
+    function appendMsg(role, text, extra) {
+      const div = document.createElement("div");
+      div.className = role === "user" ? "chat-msg-user" : "chat-msg-agent" + (extra ? " " + extra : "");
+      div.textContent = text;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    chatForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const formData = new FormData();
-      formData.set("text", document.getElementById("ingest-text").value);
-      statusEl.textContent = "Processing...";
-      statusEl.classList.remove("hidden");
+      const text = chatInput.value.trim();
+      if (!text) return;
+      appendMsg("user", text);
+      chatInput.value = "";
+      chatBtn.disabled = true;
+      chatBtn.textContent = "Thinking...";
+      chatStatus.classList.add("hidden");
       try {
-        const resp = await fetch("/memory/ingest/text", { method: "POST", body: formData });
+        const resp = await fetch("/memory/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ history: chatHistory, text }),
+        });
         const data = await resp.json();
-        statusEl.textContent = resp.ok ? data.message : "Error: " + (data.error || JSON.stringify(data));
-        if (resp.ok) refreshMemoryDisplay();
+        if (!resp.ok) {
+          appendMsg("agent", "Error: " + (data.error || resp.statusText));
+        } else {
+          chatHistory = data.history;
+          appendMsg("agent", data.report);
+          await refreshMemoryDisplay();
+        }
       } catch (err) {
-        statusEl.textContent = "Error: " + err.message;
+        appendMsg("agent", "Network error: " + err.message);
+      } finally {
+        chatBtn.disabled = false;
+        chatBtn.textContent = "Send";
       }
+    });
+
+    undoBtn.addEventListener("click", async () => {
+      undoBtn.disabled = true;
+      try {
+        const resp = await fetch("/memory/undo", { method: "POST" });
+        const data = await resp.json();
+        if (!resp.ok) {
+          chatStatus.textContent = data.error || "Nothing to undo.";
+          chatStatus.classList.remove("hidden");
+        } else {
+          appendMsg("agent", "↩ " + data.report, "undo");
+          const display = document.getElementById("memory-display");
+          if (display && data.memory_json) display.textContent = data.memory_json;
+        }
+      } catch (err) {
+        chatStatus.textContent = "Error: " + err.message;
+        chatStatus.classList.remove("hidden");
+      } finally {
+        undoBtn.disabled = false;
+      }
+    });
+
+    clearChatBtn.addEventListener("click", () => {
+      chatHistory = [];
+      chatLog.innerHTML = "";
     });
   }
 

@@ -135,3 +135,63 @@ pre {
 }
 
 section { margin-bottom: 1.5rem; }
+
+/* Chat panel */
+#chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.chat-msg-user {
+  align-self: flex-end;
+  background: #1a1a1a;
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px 12px 2px 12px;
+  max-width: 82%;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-msg-agent {
+  align-self: flex-start;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 0.5rem 0.75rem;
+  border-radius: 2px 12px 12px 12px;
+  max-width: 82%;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-msg-agent.undo {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.chat-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chat-actions button:not(#chat-btn) {
+  background: transparent;
+  color: #555;
+  border: 1px solid #ddd;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.9rem;
+}
+
+.chat-actions button:not(#chat-btn):hover {
+  background: #f5f5f5;
+  color: #1a1a1a;
+}

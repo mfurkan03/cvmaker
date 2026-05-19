@@ -135,6 +135,55 @@ def generate_cv(target: str, language: str) -> tuple[dict, bool]:
     raise RuntimeError(f"generate_cv exceeded {MAX_TOOL_ROUNDS} tool call rounds without producing a CV")
 
 
+def chat_with_memory(
+    history: list[dict], user_text: str, current_memory: dict
+) -> tuple[dict, str, list[dict]]:
+    """Multi-turn memory manager with always-fresh memory context.
+
+    Injects current memory state into the system prompt on every call so the
+    agent always sees the latest state, regardless of how many turns have passed.
+
+    Returns (updated_memory, report, updated_history).
+    history items: {"role": "user"|"assistant", "content": str}
+    """
+    system_content = (
+        _MERGE_SYSTEM
+        + f"\n\nCurrent memory state:\n{json.dumps(current_memory, indent=2, ensure_ascii=False)}"
+    )
+    groq_messages = (
+        [{"role": "system", "content": system_content}]
+        + history
+        + [{"role": "user", "content": user_text}]
+    )
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=groq_messages,
+        temperature=0.1,
+    )
+
+    content = response.choices[0].message.content.strip()
+    if "```json" in content:
+        content = content.split("```json")[1].split("```")[0].strip()
+    elif "```" in content:
+        content = content.split("```")[1].split("```")[0].strip()
+    try:
+        result = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Agent returned invalid JSON: {exc}\nContent: {content[:200]}") from exc
+
+    if "memory" not in result or "report" not in result:
+        raise ValueError(
+            f"Agent response missing 'memory' or 'report' keys. Got: {list(result.keys())}"
+        )
+
+    updated_history = history + [
+        {"role": "user", "content": user_text},
+        {"role": "assistant", "content": result["report"]},
+    ]
+    return result["memory"], result["report"], updated_history
+
+
 def merge_into_memory(text: str, current_memory: dict) -> tuple[dict, str]:
     """Use agent to process text (content or command) and update memory.
 

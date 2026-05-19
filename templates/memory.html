@@ -6,12 +6,18 @@
   <p class="hint">Your background data is stored in <code>memory.json</code>. Add info or send commands — the agent handles both.</p>
 
   <section>
-    <h2>Add from text or command</h2>
-    <form id="ingest-text-form">
-      <textarea id="ingest-text" rows="5" placeholder="Add info: paste work history, projects, bio...&#10;Or send a command: &quot;delete my experience at X&quot;, &quot;change email to Y&quot;, &quot;remove all certifications&quot;"></textarea>
-      <button type="submit">Add to Memory</button>
+    <h2>Memory Manager</h2>
+    <p class="hint" style="margin-bottom:0.75rem">Add info or send commands. The agent always sees the current memory before responding.</p>
+    <div id="chat-log"></div>
+    <form id="chat-form">
+      <textarea id="chat-input" name="text" rows="3" placeholder="Add info: paste work history, projects, bio...&#10;Or command: &quot;delete experience at X&quot;, &quot;change email to Y&quot;, &quot;clear certifications&quot;"></textarea>
+      <div class="chat-actions">
+        <button type="submit" id="chat-btn">Send</button>
+        <button type="button" id="undo-btn">↩ Undo last change</button>
+        <button type="button" id="clear-chat-btn">Clear chat</button>
+      </div>
     </form>
-    <div id="ingest-text-status" class="status hidden"></div>
+    <div id="chat-status" class="status hidden"></div>
   </section>
 
   <section>

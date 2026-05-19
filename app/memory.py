@@ -1,10 +1,12 @@
 import copy
 import json
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
 MEMORY_PATH = Path("memory.json")
+BACKUP_PATH = Path("memory.backup.json")
 
 DEFAULT_MEMORY: dict = {
     "personal": {
@@ -52,3 +54,19 @@ def save_memory(data: dict) -> None:
 
 def memory_as_text() -> str:
     return json.dumps(load_memory(), indent=2, ensure_ascii=False)
+
+
+def backup_memory() -> None:
+    """Copy current memory.json to memory.backup.json before a write."""
+    if MEMORY_PATH.exists():
+        shutil.copy2(MEMORY_PATH, BACKUP_PATH)
+
+
+def restore_memory() -> dict:
+    """Restore memory from the last backup. Returns the restored dict."""
+    if not BACKUP_PATH.exists():
+        raise FileNotFoundError("No backup available to undo.")
+    data = json.loads(BACKUP_PATH.read_text(encoding="utf-8"))
+    save_memory(data)
+    BACKUP_PATH.unlink()
+    return data

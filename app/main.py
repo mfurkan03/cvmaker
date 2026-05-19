@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.memory import load_memory, save_memory
-from app.agent import generate_cv, merge_into_memory
+from app.memory import load_memory, save_memory, backup_memory, restore_memory
+from app.agent import generate_cv, merge_into_memory, chat_with_memory
 from app.pdf import render_cv_pdf
 from app.ingest import extract_text
 
@@ -49,6 +49,36 @@ async def update_memory_data(data: dict):
     return {"status": "ok"}
 
 
+@app.post("/memory/chat")
+async def memory_chat(request: Request):
+    body = await request.json()
+    history = body.get("history", [])
+    text = body.get("text", "").strip()
+    if not text:
+        return JSONResponse(status_code=400, content={"error": "No text provided."})
+    current = load_memory()
+    try:
+        updated, report, new_history = chat_with_memory(history, text, current)
+    except (RuntimeError, ValueError) as exc:
+        return JSONResponse(status_code=502, content={"error": str(exc)})
+    backup_memory()
+    save_memory(updated)
+    return {"status": "ok", "report": report, "history": new_history}
+
+
+@app.post("/memory/undo")
+async def memory_undo():
+    try:
+        restored = restore_memory()
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    return {
+        "status": "ok",
+        "report": "Last change undone.",
+        "memory_json": json.dumps(restored, indent=2),
+    }
+
+
 @app.post("/memory/ingest/text")
 async def ingest_text(text: str = Form(...)):
     current = load_memory()
@@ -56,6 +86,7 @@ async def ingest_text(text: str = Form(...)):
         updated, report = merge_into_memory(text, current)
     except (RuntimeError, ValueError) as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
+    backup_memory()
     save_memory(updated)
     return {"status": "ok", "message": report}
 
@@ -74,6 +105,7 @@ async def ingest_file(file: UploadFile = File(...)):
         updated, report = merge_into_memory(text, current)
     except (RuntimeError, ValueError) as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
+    backup_memory()
     save_memory(updated)
     return {"status": "ok", "message": report}
 
