@@ -41,3 +41,13 @@ def test_memory_as_text_is_valid_json(tmp_path):
         text = memory_as_text()
     parsed = json.loads(text)
     assert isinstance(parsed, dict)
+
+
+def test_load_memory_returns_defaults_on_corrupt_json(tmp_path):
+    mem_path = tmp_path / "memory.json"
+    mem_path.write_text("not valid json {{{", encoding="utf-8")
+    with patch("app.memory.MEMORY_PATH", mem_path):
+        from app.memory import load_memory
+        result = load_memory()
+    assert "personal" in result
+    assert "education" in result
