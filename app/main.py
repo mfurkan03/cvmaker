@@ -1,7 +1,6 @@
 import io
 import json
 import os
-import httpx
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.memory import load_memory, save_memory, backup_memory, restore_memory
-from app.agent import generate_cv, merge_into_memory, chat_with_memory, MODEL
+from app.agent import generate_cv, merge_into_memory, chat_with_memory, MODEL, get_quota_cache
 from app.pdf import render_cv_pdf
 from app.ingest import extract_text
 
@@ -156,26 +155,14 @@ async def groq_models():
 
 @app.post("/groq/quota")
 async def groq_quota(request: Request):
-    body = await request.json()
-    model_id = body.get("model", MODEL)
-    api_key = os.getenv("GROQ_API_KEY", "")
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": model_id, "messages": [{"role": "user", "content": "hi"}], "max_tokens": 1},
-            )
-        rl = {}
-        for k, v in resp.headers.items():
-            if "ratelimit" in k.lower():
-                rl[k.replace("x-ratelimit-", "").replace("-", "_")] = v
-        if resp.status_code >= 400 and not rl:
-            err = resp.json().get("error", {}).get("message", resp.text)
-            return JSONResponse(status_code=502, content={"error": err})
-        return {"status": "ok", "quota": rl}
-    except httpx.RequestError as exc:
-        return JSONResponse(status_code=502, content={"error": str(exc)})
+    """Return cached rate-limit info from the last real API call — no quota consumed."""
+    quota = get_quota_cache()
+    if not quota:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "No quota data yet — generate a CV or send a memory message first."},
+        )
+    return {"status": "ok", "quota": quota}
 
 
 @app.get("/health")

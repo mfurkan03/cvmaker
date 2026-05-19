@@ -8,6 +8,30 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY", ""))
 MODEL = "llama-3.3-70b-versatile"
 MAX_TOOL_ROUNDS = 8
 
+# Cached rate-limit headers from the last real API call.
+# Updated automatically; served by GET /groq/quota so no probe call is needed.
+_quota_cache: dict = {}
+
+
+def _call(model: str, **kwargs):
+    """Wrapper around chat.completions.create that caches rate-limit headers."""
+    global _quota_cache
+    raw = client.chat.completions.with_raw_response.create(model=model, **kwargs)
+    try:
+        rl = {}
+        for k, v in raw.headers.items():
+            if "ratelimit" in k.lower():
+                rl[k.replace("x-ratelimit-", "").replace("-", "_")] = v
+        if rl:
+            _quota_cache = rl
+    except Exception:
+        pass
+    return raw.parse()
+
+
+def get_quota_cache() -> dict:
+    return dict(_quota_cache)
+
 _TOOLS = [
     {
         "type": "function",
@@ -123,7 +147,7 @@ def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, b
     ]
 
     for _round in range(MAX_TOOL_ROUNDS):
-        response = client.chat.completions.create(
+        response = _call(
             model=model,
             messages=messages,
             tools=_TOOLS,
@@ -198,7 +222,7 @@ def chat_with_memory(
         + [{"role": "user", "content": user_text}]
     )
 
-    response = client.chat.completions.create(
+    response = _call(
         model=model,
         messages=groq_messages,
         temperature=0.1,
@@ -242,7 +266,7 @@ def merge_into_memory(text: str, current_memory: dict, model: str = MODEL) -> tu
         },
     ]
 
-    response = client.chat.completions.create(
+    response = _call(
         model=model,
         messages=messages,
         temperature=0.1,

@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const data = await resp.json();
         if (!resp.ok || data.error) {
-          info.textContent = "Error: " + (data.error || resp.statusText);
+          info.textContent = resp.status === 404 ? data.error : "Error: " + (data.error || resp.statusText);
           info.classList.add("error");
         } else {
           const q = data.quota || {};
