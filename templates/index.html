@@ -1,38 +1,63 @@
 {% extends "base.html" %}
 {% block nav_generate %}active{% endblock %}
 {% block content %}
-<div class="card">
-  <h1>Generate CV</h1>
-  <p class="hint">Paste a job description, or just name a target (e.g. "Google SWE internship", "ETH Zurich MSc CS 2025").</p>
+<div class="cv-split-container" id="cv-split-container">
 
-  <form id="generate-form">
-    <label for="target">Target / Job Description</label>
-    <textarea id="target" name="target" rows="8" placeholder="Paste job description here, or type a target name..."></textarea>
+  <!-- Left: controls -->
+  <div id="controls-panel">
+    <h1>Generate CV</h1>
+    <p class="hint">Paste a job description, or type a target (e.g. "Google SWE internship", "ETH Zurich MSc CS 2025").</p>
 
-    <label for="language">Output Language</label>
-    <select id="language" name="language">
-      <option value="English">English</option>
-      <option value="Turkish">Turkish</option>
-    </select>
+    <form id="generate-form">
+      <label for="target">Target / Job Description</label>
+      <textarea id="target" name="target" rows="7" placeholder="Paste job description here, or type a target name..."></textarea>
 
-    <label for="cv-model">AI Model</label>
-    <div class="model-row">
-      <select id="cv-model" name="model">
-        {% for m in models %}
-        <option value="{{ m.id }}"{% if m.id == default_model %} selected{% endif %}>{{ m.label }}</option>
-        {% endfor %}
+      <label for="language">Output Language</label>
+      <select id="language" name="language">
+        <option value="English">English</option>
+        <option value="Turkish">Turkish</option>
       </select>
-      <button type="button" class="quota-btn" data-model-select="cv-model" data-quota-target="quota-cv">Check quota</button>
+
+      <label for="cv-model">AI Model</label>
+      <div class="model-row">
+        <select id="cv-model" name="model">
+          {% for m in models %}
+          <option value="{{ m.id }}"{% if m.id == default_model %} selected{% endif %}>{{ m.label }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="quota-btn" data-model-select="cv-model" data-quota-target="quota-cv">Check quota</button>
+      </div>
+      <div id="quota-cv" class="quota-info hidden"></div>
+
+      <button type="submit" id="generate-btn">Generate CV</button>
+    </form>
+
+    <div id="status" class="status hidden"></div>
+    <div id="fallback-warning" class="warning hidden">
+      Search quota exhausted — used DuckDuckGo fallback for web research.
     </div>
-    <div id="quota-cv" class="quota-info hidden"></div>
 
-    <button type="submit" id="generate-btn">Generate CV</button>
-  </form>
-
-  <div id="status" class="status hidden"></div>
-  <div id="fallback-warning" class="warning hidden">
-    Search quota exhausted — used DuckDuckGo fallback for web research.
+    <!-- Refine panel (shown after generation) -->
+    <div id="refine-panel" class="hidden">
+      <h3>Ask AI to refine</h3>
+      <form id="refine-form">
+        <textarea id="refine-input" rows="3" placeholder="e.g. Make the summary shorter, or Add more detail to the first job bullet points"></textarea>
+        <button type="submit" id="refine-btn">Apply</button>
+      </form>
+      <div id="refine-status" class="status hidden"></div>
+    </div>
   </div>
-  <a id="download-link" class="download-btn hidden" href="#" download="cv.pdf">Download CV (PDF)</a>
+
+  <!-- Right: preview -->
+  <div id="cv-preview-panel">
+    <div id="cv-preview-placeholder">
+      <p>Your CV will appear here after generation.</p>
+    </div>
+    <div id="cv-preview-content" class="hidden">
+      <button id="cv-download-btn">Download PDF</button>
+      <div id="cv-preview-html"></div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
