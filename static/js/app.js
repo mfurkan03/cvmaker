@@ -1,5 +1,37 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  // Preferred display order for object fields inside cards
+  const FIELD_ORDER = [
+    "name", "description", "organization",
+    "start_date", "end_date",
+    "technologies", "github", "url", "highlights",
+    "company", "title", "role", "position",
+    "institution", "degree", "field",
+    "university", "department", "faculty",
+    "cgpa", "thesis",
+    "startDate", "endDate", "start", "end",
+  ];
+
+  // Card templates for empty "Add" clicks
+  const CARD_TEMPLATES = {
+    education:      { institution: "", degree: "", field: "", start: "", end: "" },
+    experience:     { company: "", title: "", start: "", end: "", highlights: [] },
+    projects:       { name: "", description: "", technologies: [], url: "" },
+    certifications: "",
+    awards:         "",
+  };
+
+  function sortedEntries(obj) {
+    return Object.entries(obj).sort(([a], [b]) => {
+      const ai = FIELD_ORDER.indexOf(a);
+      const bi = FIELD_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }
+
   // ── Quota widget (shared across pages) ──
   document.querySelectorAll(".quota-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
@@ -43,13 +75,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Generate CV form ──
   const generateForm = document.getElementById("generate-form");
   if (generateForm) {
-    const btn        = document.getElementById("generate-btn");
-    const statusEl   = document.getElementById("status");
-    const warningEl  = document.getElementById("fallback-warning");
-    const downloadEl = document.getElementById("download-link");
-    const targetEl   = document.getElementById("target");
-    const langEl     = document.getElementById("language");
-    const modelEl    = document.getElementById("cv-model");
+    const btn         = document.getElementById("generate-btn");
+    const statusEl    = document.getElementById("status");
+    const warningEl   = document.getElementById("fallback-warning");
+    const targetEl    = document.getElementById("target");
+    const langEl      = document.getElementById("language");
+    const modelEl     = document.getElementById("cv-model");
 
     // Restore saved values
     if (targetEl && sessionStorage.getItem("cv_target"))
@@ -66,32 +97,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     generateForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (downloadEl.href && downloadEl.href.startsWith("blob:")) {
-        URL.revokeObjectURL(downloadEl.href);
-        downloadEl.href = "#";
-      }
       btn.disabled = true;
       btn.textContent = "Generating…";
       statusEl.textContent = "Agent is working — this may take 15–30 seconds…";
       statusEl.classList.remove("hidden");
       warningEl.classList.add("hidden");
-      downloadEl.classList.add("hidden");
 
       const formData = new FormData(generateForm);
       try {
         const resp = await fetch("/generate", { method: "POST", body: formData });
+        const data = await resp.json();
         if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ error: resp.statusText }));
-          statusEl.textContent = "Error: " + (err.error || resp.statusText);
+          statusEl.textContent = "Error: " + (data.error || resp.statusText);
           return;
         }
-        if (resp.headers.get("X-Search-Fallback") === "true")
-          warningEl.classList.remove("hidden");
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        downloadEl.href = url;
-        downloadEl.classList.remove("hidden");
-        statusEl.textContent = "CV generated successfully.";
+        if (data.used_fallback) warningEl.classList.remove("hidden");
+
+        // Store live state
+        window.__CV_SECTIONS__ = data.sections;
+        window.__CV_LANGUAGE__ = langEl ? langEl.value : "English";
+
+        // Show preview
+        showCvPreview(data.html);
+        statusEl.textContent = "CV generated. Click any text to edit, or use the refine panel below.";
       } catch (err) {
         statusEl.textContent = "Network error: " + err.message;
       } finally {
@@ -99,6 +127,142 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.textContent = "Generate CV";
       }
     });
+
+    // ── Preview helpers ──
+
+    function showCvPreview(html) {
+      const placeholder = document.getElementById("cv-preview-placeholder");
+      const content     = document.getElementById("cv-preview-content");
+      const htmlEl      = document.getElementById("cv-preview-html");
+      const refinePanel = document.getElementById("refine-panel");
+
+      if (placeholder) placeholder.classList.add("hidden");
+      if (htmlEl) htmlEl.innerHTML = html;
+      if (content) content.classList.remove("hidden");
+      if (refinePanel) refinePanel.classList.remove("hidden");
+
+      // Activate split layout (removes max-width constraint on <main>)
+      document.querySelector("main")?.classList.add("cv-split-active");
+
+      attachEditListeners();
+    }
+
+    function setNestedValue(obj, path, value) {
+      const parts = path.split(".");
+      let cur = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const key = isNaN(parts[i]) ? parts[i] : parseInt(parts[i], 10);
+        if (cur[key] === undefined || cur[key] === null) return;
+        cur = cur[key];
+      }
+      const last = parts[parts.length - 1];
+      cur[isNaN(last) ? last : parseInt(last, 10)] = value;
+    }
+
+    function attachEditListeners() {
+      const htmlEl = document.getElementById("cv-preview-html");
+      if (!htmlEl) return;
+      htmlEl.querySelectorAll("[data-cv-path]").forEach(el => {
+        el.addEventListener("blur", () => {
+          if (!window.__CV_SECTIONS__) return;
+          const path = el.dataset.cvPath;
+          const value = el.innerText.trim();
+          setNestedValue(window.__CV_SECTIONS__, path, value);
+        });
+        // Prevent Enter from inserting <br>/<div> in single-line fields
+        const multiLinePaths = ["summary", "research_interests"];
+        const isMultiLine = multiLinePaths.some(p => el.dataset.cvPath === p) ||
+                            el.dataset.cvPath?.includes(".bullets.");
+        if (!isMultiLine) {
+          el.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter") { ev.preventDefault(); el.blur(); }
+          });
+        }
+      });
+    }
+
+    // ── Download ──
+    const downloadBtn = document.getElementById("cv-download-btn");
+    if (downloadBtn) {
+      downloadBtn.addEventListener("click", async () => {
+        if (!window.__CV_SECTIONS__) return;
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = "Generating PDF…";
+        try {
+          const resp = await fetch("/cv/download", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sections: window.__CV_SECTIONS__,
+              language: window.__CV_LANGUAGE__ || "English",
+            }),
+          });
+          if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            alert("Download error: " + (err.error || resp.statusText));
+            return;
+          }
+          const blob = await resp.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "cv.pdf";
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          alert("Network error: " + err.message);
+        } finally {
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = "Download PDF";
+        }
+      });
+    }
+
+    // ── Refine form ──
+    const refineForm = document.getElementById("refine-form");
+    if (refineForm) {
+      const refineBtn    = document.getElementById("refine-btn");
+      const refineInput  = document.getElementById("refine-input");
+      const refineStatus = document.getElementById("refine-status");
+
+      refineForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const instruction = refineInput.value.trim();
+        if (!instruction || !window.__CV_SECTIONS__) return;
+        refineBtn.disabled = true;
+        refineBtn.textContent = "Applying…";
+        refineStatus.textContent = "Asking AI to refine…";
+        refineStatus.classList.remove("hidden");
+
+        try {
+          const resp = await fetch("/cv/refine", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sections: window.__CV_SECTIONS__,
+              instruction,
+              language: window.__CV_LANGUAGE__ || "English",
+              model: modelEl?.value || "",
+            }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            refineStatus.textContent = "Error: " + (data.error || resp.statusText);
+            return;
+          }
+          window.__CV_SECTIONS__ = data.sections;
+          showCvPreview(data.html);
+          refineInput.value = "";
+          refineStatus.textContent = "Done. Review the changes above.";
+          setTimeout(() => refineStatus.classList.add("hidden"), 3000);
+        } catch (err) {
+          refineStatus.textContent = "Network error: " + err.message;
+        } finally {
+          refineBtn.disabled = false;
+          refineBtn.textContent = "Apply";
+        }
+      });
+    }
   }
 
   // ── Memory chat ──
@@ -300,9 +464,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }))));
 
     editor.appendChild(buildTextareaSection("Summary", "summary", data.summary || ""));
-    editor.appendChild(buildListSection("Education",      "education",      data.education      || []));
-    editor.appendChild(buildListSection("Experience",     "experience",     data.experience     || []));
-    editor.appendChild(buildListSection("Projects",       "projects",       data.projects       || []));
+    editor.appendChild(buildCardListSection("Education",      "education",      data.education      || []));
+    editor.appendChild(buildCardListSection("Experience",     "experience",     data.experience     || []));
+    editor.appendChild(buildCardListSection("Projects",       "projects",       data.projects       || []));
 
     const skills = data.skills || {};
     editor.appendChild(buildFieldSection("Skills", [
@@ -311,8 +475,8 @@ document.addEventListener("DOMContentLoaded", () => {
       { key: "skills.languages", label: "Languages", value: (skills.languages || []).join(", ") },
     ], "Comma-separated"));
 
-    editor.appendChild(buildListSection("Certifications", "certifications", data.certifications || []));
-    editor.appendChild(buildListSection("Awards",         "awards",         data.awards         || []));
+    editor.appendChild(buildCardListSection("Certifications", "certifications", data.certifications || []));
+    editor.appendChild(buildCardListSection("Awards",         "awards",         data.awards         || []));
     editor.appendChild(buildTextareaSection("Notes",      "notes",          data.notes          || ""));
   }
 
@@ -362,43 +526,239 @@ document.addEventListener("DOMContentLoaded", () => {
     return wrap;
   }
 
-  function buildListSection(title, key, items) {
+  function isLongStr(s) {
+    return String(s).includes('\n') || String(s).length > 100;
+  }
+
+  function buildStringListWidget(arr) {
+    const wrap = document.createElement("div");
+    wrap.className = "mem-string-list";
+    wrap.dataset.widgetType = "string-list";
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "mem-add-btn mem-add-list-item-btn";
+    addBtn.textContent = "+ Add item";
+    addBtn.addEventListener("click", () => addStringItem(""));
+    wrap.appendChild(addBtn);
+
+    function addStringItem(val) {
+      const row = document.createElement("div");
+      row.className = "mem-string-list-item";
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.className = "mem-string-list-input";
+      inp.value = val;
+      const rm = document.createElement("button");
+      rm.type = "button";
+      rm.className = "mem-remove-btn";
+      rm.title = "Remove";
+      rm.textContent = "×";
+      rm.addEventListener("click", () => row.remove());
+      row.appendChild(inp);
+      row.appendChild(rm);
+      wrap.insertBefore(row, addBtn);
+    }
+
+    arr.forEach(v => addStringItem(String(v ?? "")));
+    return wrap;
+  }
+
+  function renderWidget(val) {
+    if (val === null || val === undefined) val = "";
+
+    if (Array.isArray(val)) {
+      return buildStringListWidget(
+        val.map(v => (typeof v === "object" && v !== null) ? JSON.stringify(v) : String(v ?? ""))
+      );
+    }
+
+    if (typeof val === "object") {
+      const wrap = document.createElement("div");
+      wrap.className = "mem-sub-object";
+      wrap.dataset.widgetType = "sub-object";
+      Object.entries(val).forEach(([k, v]) => wrap.appendChild(buildFieldRow(k, v)));
+      return wrap;
+    }
+
+    const s = String(val);
+    if (isLongStr(s)) {
+      const ta = document.createElement("textarea");
+      ta.className = "mem-value-textarea";
+      ta.dataset.widgetType = "textarea";
+      ta.value = s;
+      ta.rows = Math.min(Math.max(2, s.split('\n').length + 1), 8);
+      return ta;
+    }
+
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "mem-value-input";
+    inp.dataset.widgetType = "string";
+    inp.value = s;
+    return inp;
+  }
+
+  function buildFieldRow(key, val) {
+    const row = document.createElement("div");
+    row.className = "mem-field-row";
+    row.dataset.fieldKey = key;
+    const lbl = document.createElement("span");
+    lbl.className = "mem-label";
+    lbl.textContent = key;
+    row.appendChild(lbl);
+    row.appendChild(renderWidget(val));
+    return row;
+  }
+
+  function buildCard(item, index, list) {
+    const card = document.createElement("div");
+    card.className = "mem-card";
+
+    const header = document.createElement("div");
+    header.className = "mem-card-header";
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "mem-card-title";
+    if (typeof item === "string" || typeof item === "number") {
+      titleEl.textContent = String(item).slice(0, 60) || `Entry #${index + 1}`;
+    } else {
+      const tf = ["name", "company", "institution", "title", "position"].find(f => item[f]);
+      titleEl.textContent = tf ? String(item[tf]).slice(0, 60) : `Entry #${index + 1}`;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "mem-card-actions";
+
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "mem-order-btn";
+    upBtn.title = "Move up";
+    upBtn.textContent = "↑";
+    upBtn.addEventListener("click", () => {
+      const prev = card.previousElementSibling;
+      if (prev && prev.classList.contains("mem-card")) list.insertBefore(card, prev);
+    });
+
+    const dnBtn = document.createElement("button");
+    dnBtn.type = "button";
+    dnBtn.className = "mem-order-btn";
+    dnBtn.title = "Move down";
+    dnBtn.textContent = "↓";
+    dnBtn.addEventListener("click", () => {
+      const next = card.nextElementSibling;
+      if (next && next.classList.contains("mem-card")) list.insertBefore(next, card);
+    });
+
+    const rmBtn = document.createElement("button");
+    rmBtn.type = "button";
+    rmBtn.className = "mem-remove-btn";
+    rmBtn.title = "Remove entry";
+    rmBtn.textContent = "×";
+    rmBtn.addEventListener("click", () => card.remove());
+
+    actions.appendChild(upBtn);
+    actions.appendChild(dnBtn);
+    actions.appendChild(rmBtn);
+    header.appendChild(titleEl);
+    header.appendChild(actions);
+    card.appendChild(header);
+
+    const body = document.createElement("div");
+    body.className = "mem-card-body";
+
+    if (typeof item === "string" || typeof item === "number") {
+      const ta = document.createElement("textarea");
+      ta.className = "mem-card-string";
+      ta.dataset.widgetType = "card-string";
+      ta.value = String(item);
+      ta.rows = 2;
+      body.appendChild(ta);
+    } else if (typeof item === "object" && item !== null) {
+      sortedEntries(item).forEach(([key, val]) => body.appendChild(buildFieldRow(key, val)));
+    }
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function buildCardListSection(title, sectionKey, items) {
     const wrap = document.createElement("div");
     wrap.className = "mem-section";
+
     const h = document.createElement("div");
     h.className = "mem-section-title";
     h.textContent = title;
     wrap.appendChild(h);
 
     const list = document.createElement("div");
-    list.className = "mem-list";
-    list.dataset.listKey = key;
+    list.className = "mem-card-list";
+    list.dataset.cardListKey = sectionKey;
 
-    function addItem(val) {
-      const item = document.createElement("div");
-      item.className = "mem-list-item";
-      const ta = document.createElement("textarea");
-      ta.value = typeof val === "string" ? val : JSON.stringify(val, null, 2);
-      ta.rows = typeof val === "object" && val !== null ? 4 : 2;
-      const rmBtn = document.createElement("button");
-      rmBtn.className = "mem-remove-btn";
-      rmBtn.title = "Remove";
-      rmBtn.textContent = "×";
-      rmBtn.addEventListener("click", () => item.remove());
-      item.appendChild(ta);
-      item.appendChild(rmBtn);
-      list.appendChild(item);
-    }
-
-    items.forEach(addItem);
+    items.forEach((item, i) => list.appendChild(buildCard(item, i, list)));
     wrap.appendChild(list);
 
     const addBtn = document.createElement("button");
+    addBtn.type = "button";
     addBtn.className = "mem-add-btn";
-    addBtn.textContent = "+ Add entry";
-    addBtn.addEventListener("click", () => addItem(""));
+    const singular = title.toLowerCase().replace(/s$/, "");
+    addBtn.textContent = `+ Add ${singular}`;
+    addBtn.addEventListener("click", () => {
+      const template = CARD_TEMPLATES[sectionKey];
+      let newItem;
+      if (template !== undefined) {
+        newItem = typeof template === "string" ? "" : JSON.parse(JSON.stringify(template));
+      } else {
+        const cards = list.querySelectorAll(".mem-card");
+        if (cards.length > 0 && items.length > 0 && typeof items[0] === "object") {
+          newItem = Object.fromEntries(
+            Object.entries(items[0]).map(([k, v]) => [k, Array.isArray(v) ? [] : ""])
+          );
+        } else {
+          newItem = {};
+        }
+      }
+      list.appendChild(buildCard(newItem, list.querySelectorAll(".mem-card").length, list));
+    });
     wrap.appendChild(addBtn);
+
     return wrap;
+  }
+
+  function readWidget(el) {
+    if (!el) return "";
+    const t = el.dataset.widgetType;
+    if (t === "string") return el.value.trim();
+    if (t === "textarea" || t === "card-string") return el.value.trim();
+    if (t === "string-list") {
+      return Array.from(el.querySelectorAll(".mem-string-list-input"))
+        .map(i => i.value.trim())
+        .filter(Boolean);
+    }
+    if (t === "sub-object") {
+      const obj = {};
+      el.querySelectorAll(":scope > .mem-field-row").forEach(row => {
+        const key = row.dataset.fieldKey;
+        const widget = row.querySelector(".mem-value-input, .mem-value-textarea, .mem-string-list, .mem-sub-object");
+        if (key) obj[key] = readWidget(widget);
+      });
+      return obj;
+    }
+    return el.value ? el.value.trim() : "";
+  }
+
+  function readCard(cardEl) {
+    const strEl = cardEl.querySelector(".mem-card-string");
+    if (strEl) return strEl.value.trim();
+    const obj = {};
+    const body = cardEl.querySelector(".mem-card-body");
+    if (!body) return obj;
+    body.querySelectorAll(":scope > .mem-field-row").forEach(row => {
+      const key = row.dataset.fieldKey;
+      const widget = row.querySelector(".mem-value-input, .mem-value-textarea, .mem-string-list, .mem-sub-object");
+      if (key && widget) obj[key] = readWidget(widget);
+    });
+    return obj;
   }
 
   function collectMemory() {
@@ -427,19 +787,101 @@ document.addEventListener("DOMContentLoaded", () => {
       mem[ta.dataset.key] = ta.value.trim();
     });
 
-    editor.querySelectorAll("[data-list-key]").forEach(list => {
-      const key = list.dataset.listKey;
+    editor.querySelectorAll("[data-card-list-key]").forEach(list => {
+      const key = list.dataset.cardListKey;
       if (!(key in mem)) return;
-      mem[key] = Array.from(list.querySelectorAll(".mem-list-item textarea"))
-        .map(ta => {
-          const v = ta.value.trim();
-          if (!v) return null;
-          try { return JSON.parse(v); } catch (_) { return v; }
-        })
-        .filter(v => v !== null);
+      mem[key] = Array.from(list.querySelectorAll(":scope > .mem-card"))
+        .map(readCard)
+        .filter(v => v !== null && v !== "" && !(typeof v === "object" && Object.keys(v).length === 0));
     });
 
     return mem;
+  }
+
+  // ── GitHub import ────────────────────────────────────────────────────────
+  const githubForm = document.getElementById("github-import-form");
+  if (githubForm) {
+    const statusEl = document.getElementById("github-import-status");
+    const importBtn = document.getElementById("github-import-btn");
+
+    githubForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("github-username").value.trim();
+      if (!username) {
+        statusEl.textContent = "Please enter a GitHub username.";
+        statusEl.className = "status";
+        statusEl.classList.remove("hidden");
+        return;
+      }
+      const model = document.getElementById("github-model")?.value || "";
+      const includeForks = document.getElementById("github-forks")?.checked || false;
+
+      importBtn.disabled = true;
+      importBtn.textContent = "Importing…";
+      statusEl.textContent = "Fetching repo list from GitHub…";
+      statusEl.className = "status";
+      statusEl.classList.remove("hidden");
+
+      try {
+        const resp = await fetch("/memory/github-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, model, include_forks: includeForks }),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          statusEl.textContent = "Error: " + (err.error || resp.statusText);
+          return;
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let addedCount = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop();
+
+          for (const chunk of lines) {
+            const line = chunk.replace(/^data: /, "").trim();
+            if (!line) continue;
+            let msg;
+            try { msg = JSON.parse(line); } catch { continue; }
+
+            if (msg.error) {
+              statusEl.textContent = "Error: " + msg.error;
+              return;
+            }
+
+            if (msg.projects) {
+              // Final message — inject all projects
+              const projectsList = document.querySelector("[data-card-list-key='projects']");
+              if (projectsList && msg.projects.length) {
+                msg.projects.forEach(proj => {
+                  const idx = projectsList.querySelectorAll(".mem-card").length;
+                  projectsList.appendChild(buildCard(proj, idx, projectsList));
+                });
+                addedCount = msg.projects.length;
+              }
+              statusEl.textContent = `Done — ${addedCount} repo(s) added to Projects below. Review and click Save.`;
+            } else if (msg.total) {
+              // Progress update
+              statusEl.textContent = `Processing… ${msg.done}/${msg.total} — ${msg.repo}`;
+            }
+          }
+        }
+      } catch (err) {
+        statusEl.textContent = "Network error: " + err.message;
+      } finally {
+        importBtn.disabled = false;
+        importBtn.textContent = "Import repos";
+      }
+    });
   }
 
 });
