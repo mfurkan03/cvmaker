@@ -73,19 +73,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusEl = document.getElementById("ingest-file-status");
     ingestFileForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const file = document.getElementById("ingest-file").files[0];
-      if (!file) { statusEl.textContent = "Please select a file."; statusEl.classList.remove("hidden"); return; }
-      const formData = new FormData();
-      formData.append("file", file);
-      statusEl.textContent = "Uploading and processing...";
+      const files = Array.from(document.getElementById("ingest-file").files);
+      if (!files.length) { statusEl.textContent = "Please select a file."; statusEl.classList.remove("hidden"); return; }
       statusEl.classList.remove("hidden");
-      try {
-        const resp = await fetch("/memory/ingest/file", { method: "POST", body: formData });
-        const data = await resp.json();
-        statusEl.textContent = resp.ok ? data.message : "Error: " + (data.error || JSON.stringify(data));
-        if (resp.ok) refreshMemoryDisplay();
-      } catch (err) {
-        statusEl.textContent = "Error: " + err.message;
+      const errors = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        statusEl.textContent = `Processing ${file.name} (${i + 1}/${files.length})...`;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const resp = await fetch("/memory/ingest/file", { method: "POST", body: formData });
+          const data = await resp.json();
+          if (!resp.ok) errors.push(`${file.name}: ${data.error || resp.statusText}`);
+        } catch (err) {
+          errors.push(`${file.name}: ${err.message}`);
+        }
+      }
+      await refreshMemoryDisplay();
+      if (errors.length) {
+        statusEl.textContent = `Done with errors — ${errors.join("; ")}`;
+      } else {
+        statusEl.textContent = `${files.length} file${files.length > 1 ? "s" : ""} added to memory.`;
       }
     });
   }
