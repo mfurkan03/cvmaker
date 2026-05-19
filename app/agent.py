@@ -298,22 +298,29 @@ def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, b
                 temperature=0.3,
             )
         except BadRequestError as exc:
-            # Some models (e.g. Llama 4 Scout) emit the final CV as a malformed
-            # tool call instead of plain text. Groq rejects it, but the CV JSON
-            # is in failed_generation — try to recover it.
-            failed = ""
+            # Some models (e.g. Llama 4 Scout) try to emit the final CV as a
+            # tool call instead of plain text. Groq rejects it. The
+            # failed_generation may be truncated, so instead of parsing it we
+            # retry once with tool_choice="none" to force plain-text output.
+            body = {}
             try:
-                body = exc.body
-                if isinstance(body, dict):
-                    failed = body.get("error", {}).get("failed_generation", "")
+                body = exc.body if isinstance(exc.body, dict) else {}
             except Exception:
                 pass
-            if not failed:
+            if body.get("error", {}).get("code") != "tool_use_failed":
                 raise
+            retry_resp = _call(
+                model=model,
+                messages=messages,
+                tools=_TOOLS,
+                tool_choice="none",
+                temperature=0.3,
+            )
+            retry_content = retry_resp.choices[0].message.content or ""
             try:
-                return _extract_json(failed), used_fallback
-            except ValueError:
-                raise ValueError(f"Agent returned invalid JSON: {exc}") from exc
+                return _extract_json(retry_content), used_fallback
+            except ValueError as ve:
+                raise ValueError(f"Agent returned invalid JSON: {ve}") from ve
 
         msg = response.choices[0].message
 
