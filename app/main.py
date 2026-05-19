@@ -142,7 +142,7 @@ async def generate(
     try:
         cv_sections, used_fallback = generate_cv(target, language, model)
         html = render_cv_html(cv_sections, language, editable=True)
-    except (RuntimeError, ValueError) as exc:
+    except Exception as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
     return JSONResponse(content={
         "sections": cv_sections,

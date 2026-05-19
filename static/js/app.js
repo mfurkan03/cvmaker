@@ -106,7 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const formData = new FormData(generateForm);
       try {
         const resp = await fetch("/generate", { method: "POST", body: formData });
-        const data = await resp.json();
+        let data;
+        try { data = await resp.json(); } catch { data = {}; }
         if (!resp.ok) {
           statusEl.textContent = "Error: " + (data.error || resp.statusText);
           return;
