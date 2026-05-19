@@ -1,0 +1,46 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11pt;
+  color: #000;
+  background: #fff;
+}
+
+.cv-page {
+  width: 8.5in;
+  margin: 0 auto;
+  padding: 0.9in 1in 0.9in 1in;
+}
+
+h1.cv-name {
+  text-align: center;
+  font-size: 16pt;
+  font-weight: bold;
+  margin-bottom: 3px;
+  letter-spacing: 0.5px;
+}
+
+.cv-contact {
+  text-align: center;
+  font-size: 10pt;
+  margin-bottom: 18px;
+  color: #333;
+}
+
+h2.cv-section {
+  font-size: 11pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid #000;
+  padding-bottom: 2px;
+  margin-top: 16px;
+  margin-bottom: 6px;
+}
+
+.section-body {
+  white-space: pre-wrap;
+  font-size: 11pt;
+  line-height: 1.45;
+}

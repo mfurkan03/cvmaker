@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="{{ 'tr' if language == 'Turkish' else 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="{{ css_path }}">
+</head>
+<body>
+  <div class="cv-page">
+
+    {% if sections.personal %}
+    <h1 class="cv-name">{{ sections.personal.name }}</h1>
+    <div class="cv-contact">
+      {%- set parts = [] -%}
+      {%- if sections.personal.email %}{% set _ = parts.append(sections.personal.email) %}{% endif -%}
+      {%- if sections.personal.phone %}{% set _ = parts.append(sections.personal.phone) %}{% endif -%}
+      {%- if sections.personal.location %}{% set _ = parts.append(sections.personal.location) %}{% endif -%}
+      {%- if sections.personal.linkedin %}{% set _ = parts.append(sections.personal.linkedin) %}{% endif -%}
+      {%- if sections.personal.github %}{% set _ = parts.append(sections.personal.github) %}{% endif -%}
+      {{ parts | join(' &nbsp;|&nbsp; ') }}
+    </div>
+    {% endif %}
+
+    {% for section_name, content in sections.items() %}
+    {% if section_name != 'personal' and content %}
+    <h2 class="cv-section">{{ section_name }}</h2>
+    <div class="section-body">{{ content }}</div>
+    {% endif %}
+    {% endfor %}
+
+  </div>
+</body>
+</html>
