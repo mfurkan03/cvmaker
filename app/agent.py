@@ -6,6 +6,7 @@ from app.search import search_web
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY", ""))
 MODEL = "llama-3.3-70b-versatile"
+MAX_TOOL_ROUNDS = 8
 
 _TOOLS = [
     {
@@ -67,7 +68,7 @@ def generate_cv(target: str, language: str) -> tuple[dict, bool]:
         },
     ]
 
-    while True:
+    for _round in range(MAX_TOOL_ROUNDS):
         response = client.chat.completions.create(
             model=MODEL,
             messages=messages,
@@ -114,7 +115,12 @@ def generate_cv(target: str, language: str) -> tuple[dict, bool]:
                 content = content.split("```json")[1].split("```")[0].strip()
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
-            return json.loads(content), used_fallback
+            try:
+                return json.loads(content), used_fallback
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Agent returned invalid JSON: {exc}\nContent: {content[:200]}") from exc
+
+    raise RuntimeError(f"generate_cv exceeded {MAX_TOOL_ROUNDS} tool call rounds without producing a CV")
 
 
 def merge_into_memory(text: str, current_memory: dict) -> dict:
@@ -142,4 +148,7 @@ def merge_into_memory(text: str, current_memory: dict) -> dict:
         content = content.split("```json")[1].split("```")[0].strip()
     elif "```" in content:
         content = content.split("```")[1].split("```")[0].strip()
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Agent returned invalid JSON for memory merge: {exc}\nContent: {content[:200]}") from exc
