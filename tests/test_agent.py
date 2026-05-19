@@ -87,12 +87,21 @@ def test_merge_into_memory_command_mode():
 def test_chat_with_memory_returns_updated_history():
     from app.agent import chat_with_memory
     current = {"personal": {"name": "Test"}, "education": [], "notes": ""}
-    response_json = json.dumps({
-        "memory": {"personal": {"name": "Test"}, "education": [], "notes": "likes Python"},
-        "report": "Added note: likes Python.",
-    })
+
+    set_call = MagicMock()
+    set_call.id = "call_1"
+    set_call.function.name = "set_field"
+    set_call.function.arguments = json.dumps({"path": "notes", "value": "likes Python"})
+
+    finish_call = MagicMock()
+    finish_call.id = "call_2"
+    finish_call.function.name = "finish"
+    finish_call.function.arguments = json.dumps({"report": "Added note: likes Python."})
+
     with patch("app.agent.client") as mock_client:
-        mock_client.chat.completions.with_raw_response.create.return_value = _make_raw_response(response_json)
+        mock_client.chat.completions.with_raw_response.create.return_value = _make_raw_response(
+            "", tool_calls=[set_call, finish_call]
+        )
         updated, report, history = chat_with_memory([], "I like Python", current)
     assert updated["notes"] == "likes Python"
     assert "Python" in report
