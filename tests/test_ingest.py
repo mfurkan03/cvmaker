@@ -9,6 +9,22 @@ def test_extract_text_from_txt():
     assert "software engineer" in result
 
 
+def test_extract_text_from_txt_utf8_turkish():
+    from app.ingest import extract_text
+    text = "Yazılım mühendisiyim. Şirketimde çalışıyorum."
+    result = extract_text(text.encode("utf-8"), "cv.txt")
+    assert "Yazılım" in result
+    assert "çalışıyorum" in result
+
+
+def test_extract_text_from_txt_cp1254_turkish():
+    from app.ingest import extract_text
+    text = "İstanbul'da yazılım geliştiriyorum. Şeker gibi kod yazarım."
+    result = extract_text(text.encode("cp1254"), "cv.txt")
+    assert "İstanbul" in result
+    assert "Şeker" in result
+
+
 def test_extract_text_from_docx():
     import docx
     from app.ingest import extract_text

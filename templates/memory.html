@@ -31,7 +31,7 @@
 
   <section>
     <h2>Current Memory</h2>
-    <pre id="memory-display">{{ memory_json }}</pre>
+    <pre id="memory-display">{{ memory_json | e }}</pre>
   </section>
 </div>
 {% endblock %}
