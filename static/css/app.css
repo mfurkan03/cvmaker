@@ -336,6 +336,189 @@ section { margin-bottom: 1.5rem; }
   color: #3730a3;
 }
 
+/* Card list */
+.mem-card-list {
+  padding: 0.5rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.mem-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mem-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.mem-card-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.5rem;
+}
+
+.mem-card-actions {
+  display: flex;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.mem-order-btn {
+  background: transparent;
+  color: #aaa;
+  border: none;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border-radius: 3px;
+  line-height: 1.4;
+}
+
+.mem-order-btn:hover {
+  background: #e5e5e5;
+  color: #333;
+}
+
+.mem-card-body {
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Field rows inside cards */
+.mem-field-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.mem-field-row > .mem-label {
+  min-width: 88px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #999;
+  flex-shrink: 0;
+  padding-top: 0.36rem;
+  text-transform: lowercase;
+}
+
+.mem-value-input {
+  flex: 1;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fafafa;
+  min-width: 0;
+}
+
+.mem-value-input:focus {
+  outline: none;
+  border-color: #888;
+  background: #fff;
+}
+
+.mem-value-textarea {
+  flex: 1;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fafafa;
+  resize: vertical;
+  min-width: 0;
+}
+
+.mem-value-textarea:focus {
+  outline: none;
+  border-color: #888;
+  background: #fff;
+}
+
+/* String list widget (highlights, technologies…) */
+.mem-string-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.mem-string-list-item {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.mem-string-list-input {
+  flex: 1;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 0.84rem;
+  font-family: inherit;
+  background: #fafafa;
+  min-width: 0;
+}
+
+.mem-string-list-input:focus {
+  outline: none;
+  border-color: #888;
+  background: #fff;
+}
+
+.mem-add-list-item-btn {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  padding: 0.18rem 0.5rem;
+}
+
+/* Nested object inside a card */
+.mem-sub-object {
+  flex: 1;
+  border: 1px solid #ebebeb;
+  border-radius: 5px;
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: #f9f9f9;
+  min-width: 0;
+}
+
+/* Simple string card (certifications, awards that are plain strings) */
+.mem-card-string {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  padding: 0;
+}
+
+.mem-card-string:focus {
+  outline: none;
+}
+
 .mem-save-bar {
   display: flex;
   align-items: center;
@@ -391,3 +574,118 @@ section { margin-bottom: 1.5rem; }
 }
 
 .quota-info.error { color: #c00; }
+
+/* ── CV split layout ── */
+main.cv-split-active {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.cv-split-container {
+  display: flex;
+  height: calc(100vh - 47px); /* 47px = nav height */
+}
+
+#controls-panel {
+  width: 380px;
+  min-width: 380px;
+  padding: 1.5rem;
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#controls-panel h1 {
+  font-size: 1.4rem;
+  margin-bottom: 0;
+}
+
+#cv-preview-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: #f0f0f0;
+  padding: 2rem;
+  position: relative;
+}
+
+#cv-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 1rem;
+}
+
+#cv-preview-content {
+  max-width: 820px;
+  margin: 0 auto;
+  position: relative;
+}
+
+#cv-download-btn {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin-bottom: 0.75rem;
+  z-index: 10;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#cv-download-btn:hover { background: #333; }
+#cv-download-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+#cv-preview-html {
+  background: #fff;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+/* ── Refine panel ── */
+#refine-panel {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+#refine-panel h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+#refine-input {
+  width: 100%;
+  resize: vertical;
+}
+
+/* ── Inline editable fields ── */
+.cv-editable {
+  border-radius: 2px;
+  transition: background 0.1s;
+}
+
+.cv-editable:hover {
+  text-decoration: underline;
+  text-decoration-color: #3b82f6;
+  text-decoration-style: dotted;
+  cursor: text;
+}
+
+.cv-editable:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+  background: #eff6ff;
+}
