@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const personal = data.personal || {};
     editor.appendChild(buildFieldSection("Personal", [
-      "name", "email", "phone", "location", "linkedin", "github",
+      "name", "title", "email", "phone", "location", "linkedin", "github",
     ].map(k => ({
       key: "personal." + k,
       label: k.charAt(0).toUpperCase() + k.slice(1),
@@ -404,7 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function collectMemory() {
     const editor = document.getElementById("memory-editor");
     const mem = {
-      personal: {},
+      personal: { name: "", title: "", email: "", phone: "", location: "", linkedin: "", github: "" },
       summary: "",
       education: [], experience: [], projects: [],
       skills: { technical: [], soft: [], languages: [] },

@@ -44,7 +44,7 @@ Rules:
 Output ONLY a valid JSON object with this exact schema — no markdown fences, no extra keys:
 
 {
-  "personal": {"name": "", "email": "", "phone": "", "location": "", "linkedin": "", "github": ""},
+  "personal": {"name": "", "title": "", "email": "", "phone": "", "location": "", "linkedin": "", "github": ""},
   "summary": "",
   "education": [
     {"institution": "", "degree": "", "location": "", "date": "", "bullets": []}
@@ -63,7 +63,7 @@ Output ONLY a valid JSON object with this exact schema — no markdown fences, n
 }
 
 Schema rules:
-- "personal": nested object, all fields strings.
+- "personal": nested object, all fields strings. "title" is a short professional headline (e.g. "Software Engineer", "ML Researcher", "Computer Science Student") — derive it from the candidate's background and tailor it toward the target.
 - "summary": 1–3 sentence profile string; omit if not useful.
 - "education", "experience", "projects": arrays of entry objects. Each bullet is a complete action-verb sentence with quantified results where possible. Omit optional fields (location, url, etc.) when empty.
 - "skills": object where keys are category labels and values are comma-separated strings (e.g. {"Technical": "Python, C++, Docker", "Languages": "English, Turkish"}).

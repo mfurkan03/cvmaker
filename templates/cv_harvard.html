@@ -11,6 +11,7 @@
   {% if sections.personal %}
   {% set p = sections.personal %}
   <h1 class="cv-name">{{ p.name }}</h1>
+  {% if p.title %}<div class="cv-title">{{ p.title }}</div>{% endif %}
   <div class="cv-contact">
     {%- set parts = [] -%}
     {%- if p.email    %}{% set _ = parts.append(p.email)    %}{% endif -%}

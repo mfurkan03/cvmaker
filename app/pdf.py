@@ -125,6 +125,11 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
         personal.get("github", ""),
     ]
     contact_parts = [p for p in contact_parts if p]
+    title = personal.get("title", "")
+    if title:
+        pdf.set_font(font, "I", 11)
+        pdf.cell(W, 13, s(title), align="C", new_x="LMARGIN", new_y="NEXT")
+
     if contact_parts:
         pdf.set_font(font, "", 9.5)
         pdf.multi_cell(W, 13, s("  |  ".join(contact_parts)), align="C", new_x="LMARGIN", new_y="NEXT")

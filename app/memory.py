@@ -11,6 +11,7 @@ BACKUP_PATH = Path("memory.backup.json")
 DEFAULT_MEMORY: dict = {
     "personal": {
         "name": "",
+        "title": "",
         "email": "",
         "phone": "",
         "linkedin": "",
