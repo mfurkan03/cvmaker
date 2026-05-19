@@ -53,11 +53,11 @@ async def update_memory_data(data: dict):
 async def ingest_text(text: str = Form(...)):
     current = load_memory()
     try:
-        updated = merge_into_memory(text, current)
+        updated, report = merge_into_memory(text, current)
     except (RuntimeError, ValueError) as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
     save_memory(updated)
-    return {"status": "ok", "message": "Memory updated successfully."}
+    return {"status": "ok", "message": report}
 
 
 @app.post("/memory/ingest/file")
@@ -71,11 +71,11 @@ async def ingest_file(file: UploadFile = File(...)):
         return JSONResponse(status_code=400, content={"error": str(e)})
     current = load_memory()
     try:
-        updated = merge_into_memory(text, current)
+        updated, report = merge_into_memory(text, current)
     except (RuntimeError, ValueError) as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
     save_memory(updated)
-    return {"status": "ok", "message": f"Extracted and merged {file.filename} into memory."}
+    return {"status": "ok", "message": report}
 
 
 @app.post("/generate")

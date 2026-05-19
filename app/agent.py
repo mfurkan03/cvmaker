@@ -45,8 +45,20 @@ Rules:
 - Omit sections that have no relevant content for this target. Keep the CV lean.
 """
 
-_MERGE_SYSTEM = """You extract professional background information from text and merge it into an existing memory JSON.
-Return ONLY a valid JSON object with the same structure as the input memory. Preserve all existing data; only add or update fields.
+_MERGE_SYSTEM = """You manage a professional background memory JSON. The user may give you new information to absorb OR a command to modify the memory (e.g. "delete my experience at X", "change my email to Y", "remove all certifications", "clear projects").
+
+Steps:
+1. Determine whether the input is content to ingest or a command (or both).
+2. Apply the appropriate changes to the memory.
+3. Return a JSON object with exactly two top-level keys:
+   - "memory": the full updated memory object (same schema as the input)
+   - "report": a concise 1-3 sentence human-readable summary of exactly what changed (e.g. "Added project 'CV Maker'. Updated email to furkan@example.com."). If nothing changed, say so.
+
+Rules:
+- Preserve all existing data that was not explicitly changed or removed.
+- Do not add or remove top-level keys from the memory schema.
+- The "report" must accurately describe the actual changes made, not what the user asked for.
+- Output ONLY the JSON object — no markdown fences, no extra text.
 """
 
 
@@ -123,16 +135,18 @@ def generate_cv(target: str, language: str) -> tuple[dict, bool]:
     raise RuntimeError(f"generate_cv exceeded {MAX_TOOL_ROUNDS} tool call rounds without producing a CV")
 
 
-def merge_into_memory(text: str, current_memory: dict) -> dict:
-    """Use agent to extract info from text and merge into memory dict."""
+def merge_into_memory(text: str, current_memory: dict) -> tuple[dict, str]:
+    """Use agent to process text (content or command) and update memory.
+
+    Returns (updated_memory_dict, report_string).
+    """
     messages = [
         {"role": "system", "content": _MERGE_SYSTEM},
         {
             "role": "user",
             "content": (
                 f"Current memory:\n{json.dumps(current_memory, indent=2, ensure_ascii=False)}\n\n"
-                f"New information:\n{text}\n\n"
-                "Return the updated memory JSON."
+                f"Input:\n{text}"
             ),
         },
     ]
@@ -149,6 +163,11 @@ def merge_into_memory(text: str, current_memory: dict) -> dict:
     elif "```" in content:
         content = content.split("```")[1].split("```")[0].strip()
     try:
-        return json.loads(content)
+        result = json.loads(content)
     except json.JSONDecodeError as exc:
         raise ValueError(f"Agent returned invalid JSON for memory merge: {exc}\nContent: {content[:200]}") from exc
+
+    if "memory" not in result or "report" not in result:
+        raise ValueError(f"Agent response missing 'memory' or 'report' keys. Got: {list(result.keys())}")
+
+    return result["memory"], result["report"]

@@ -53,11 +53,42 @@ def test_generate_cv_uses_search_when_tool_called():
     assert isinstance(sections, dict)
 
 
-def test_merge_into_memory_returns_updated_dict():
+def test_merge_into_memory_returns_updated_dict_and_report():
     from app.agent import merge_into_memory
     current = {"personal": {"name": "Old Name"}, "education": [], "experience": []}
-    updated_json = json.dumps({"personal": {"name": "New Name"}, "education": ["MIT 2024"], "experience": []})
+    response_json = json.dumps({
+        "memory": {"personal": {"name": "New Name"}, "education": ["MIT 2024"], "experience": []},
+        "report": "Updated name to 'New Name'. Added MIT 2024 to education.",
+    })
     with patch("app.agent.client") as mock_client:
-        mock_client.chat.completions.create.return_value = _make_groq_response(updated_json)
-        result = merge_into_memory("My name is New Name. I went to MIT.", current)
-    assert result["personal"]["name"] == "New Name"
+        mock_client.chat.completions.create.return_value = _make_groq_response(response_json)
+        updated, report = merge_into_memory("My name is New Name. I went to MIT.", current)
+    assert updated["personal"]["name"] == "New Name"
+    assert "New Name" in report
+
+
+def test_merge_into_memory_command_mode():
+    from app.agent import merge_into_memory
+    current = {"personal": {"name": "Test"}, "education": [], "certifications": ["AWS 2023"]}
+    response_json = json.dumps({
+        "memory": {"personal": {"name": "Test"}, "education": [], "certifications": []},
+        "report": "Removed all certifications as requested.",
+    })
+    with patch("app.agent.client") as mock_client:
+        mock_client.chat.completions.create.return_value = _make_groq_response(response_json)
+        updated, report = merge_into_memory("remove all certifications", current)
+    assert updated["certifications"] == []
+    assert "certifications" in report
+
+
+def test_merge_into_memory_raises_on_missing_keys():
+    from app.agent import merge_into_memory
+    current = {"personal": {"name": "Test"}}
+    bad_response = json.dumps({"personal": {"name": "Test"}})  # missing memory/report envelope
+    with patch("app.agent.client") as mock_client:
+        mock_client.chat.completions.create.return_value = _make_groq_response(bad_response)
+        try:
+            merge_into_memory("some text", current)
+            assert False, "Should have raised ValueError"
+        except ValueError as exc:
+            assert "missing" in str(exc).lower() or "report" in str(exc).lower()

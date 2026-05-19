@@ -3,12 +3,12 @@
 {% block content %}
 <div class="card">
   <h1>My Memory</h1>
-  <p class="hint">Your background data is stored in <code>memory.json</code>. Add info here and the CV agent will use it.</p>
+  <p class="hint">Your background data is stored in <code>memory.json</code>. Add info or send commands — the agent handles both.</p>
 
   <section>
-    <h2>Add from text</h2>
+    <h2>Add from text or command</h2>
     <form id="ingest-text-form">
-      <textarea id="ingest-text" rows="5" placeholder="Paste any text about yourself — work history, project descriptions, achievements..."></textarea>
+      <textarea id="ingest-text" rows="5" placeholder="Add info: paste work history, projects, bio...&#10;Or send a command: &quot;delete my experience at X&quot;, &quot;change email to Y&quot;, &quot;remove all certifications&quot;"></textarea>
       <button type="submit">Add to Memory</button>
     </form>
     <div id="ingest-text-status" class="status hidden"></div>
