@@ -22,7 +22,31 @@ def test_extract_text_from_docx():
     assert "Test Corp" in result
 
 
+def test_extract_text_from_pdf():
+    import fitz
+    from app.ingest import extract_text
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Software Engineer with Python experience.")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    result = extract_text(pdf_bytes, "resume.pdf")
+    assert "Software Engineer" in result
+
+
 def test_extract_text_unsupported_raises():
     from app.ingest import extract_text
     with pytest.raises(ValueError, match="Unsupported file type"):
         extract_text(b"data", "file.xlsx")
+
+
+def test_extract_text_legacy_doc_raises():
+    from app.ingest import extract_text
+    with pytest.raises(ValueError, match="Unsupported file type"):
+        extract_text(b"data", "file.doc")
+
+
+def test_extract_text_empty_raises():
+    from app.ingest import extract_text
+    with pytest.raises(ValueError, match="Empty file"):
+        extract_text(b"", "resume.txt")
