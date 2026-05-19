@@ -17,6 +17,8 @@ _quota_cache: dict = {}
 def _extract_json(content: str) -> dict:
     """Robustly extract a JSON object from model output regardless of wrapping."""
     content = content.strip()
+    # Strip <think>...</think> blocks emitted by reasoning models (e.g. Qwen3)
+    content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
     # Strip markdown fences
     if "```json" in content:
         content = content.split("```json")[1].split("```")[0].strip()
