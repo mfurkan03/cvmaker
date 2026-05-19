@@ -24,7 +24,10 @@ def _extract_json(content: str) -> dict:
         content = content.split("```")[1].split("```")[0].strip()
     # Try direct parse first
     try:
-        return json.loads(content)
+        result = json.loads(content)
+        if not isinstance(result, dict):
+            raise ValueError(f"Expected a JSON object, got {type(result).__name__}.")
+        return result
     except json.JSONDecodeError:
         pass
     # Find the outermost {...} block
@@ -32,7 +35,10 @@ def _extract_json(content: str) -> dict:
     end = content.rfind("}")
     if start != -1 and end != -1 and end > start:
         try:
-            return json.loads(content[start:end + 1])
+            result = json.loads(content[start:end + 1])
+            if not isinstance(result, dict):
+                raise ValueError(f"Expected a JSON object, got {type(result).__name__}.")
+            return result
         except json.JSONDecodeError:
             pass
     raise ValueError(f"Could not extract valid JSON from model output. First 300 chars: {content[:300]}")
