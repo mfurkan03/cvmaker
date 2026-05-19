@@ -11,6 +11,15 @@
     <div id="chat-log"></div>
     <form id="chat-form">
       <textarea id="chat-input" name="text" rows="3" placeholder="Add info: paste work history, projects, bio...&#10;Or command: &quot;delete experience at X&quot;, &quot;change email to Y&quot;, &quot;clear certifications&quot;"></textarea>
+      <div class="model-row">
+        <select id="mem-model">
+          {% for m in models %}
+          <option value="{{ m.id }}"{% if m.id == default_model %} selected{% endif %}>{{ m.label }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="quota-btn" data-model-select="mem-model" data-quota-target="quota-mem">Check quota</button>
+      </div>
+      <div id="quota-mem" class="quota-info hidden"></div>
       <div class="chat-actions">
         <button type="submit" id="chat-btn">Send</button>
         <button type="button" id="undo-btn">↩ Undo last change</button>
@@ -31,7 +40,15 @@
 
   <section>
     <h2>Current Memory</h2>
-    <pre id="memory-display">{{ memory_json | e }}</pre>
+    <p class="hint" style="margin-bottom:0.75rem">Edit any field directly, then click Save.</p>
+    <div id="memory-editor"></div>
+    <div class="mem-save-bar">
+      <button id="mem-save-btn">Save changes</button>
+      <span id="mem-save-status" class="mem-save-status hidden"></span>
+    </div>
+    <script>
+      window.__INITIAL_MEMORY__ = {{ memory | tojson }};
+    </script>
   </section>
 </div>
 {% endblock %}

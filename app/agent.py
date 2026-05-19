@@ -35,37 +35,76 @@ _GENERATE_SYSTEM = """You are a professional CV writer. Create tailored, Harvard
 
 Rules:
 - Present the candidate accurately and compellingly. Do NOT exaggerate, inflate titles, or fabricate achievements.
-- Follow Harvard CV structure by default: personal info header, then Education, Experience, Projects, Skills — in that order.
-  You MAY add, remove, or reorder sections when the target genuinely calls for it (e.g. Publications before Experience for academic CVs, or a Research Interests section for graduate school).
-- If the target is a named institution/program/company and no detailed requirements are given, use search_web to find what the application actually requires before writing.
-- ATS compatibility: use standard section headings, plain text bullets (no tables, columns, or graphics), action verbs, quantify achievements where possible.
-- Output ONLY a valid JSON object. Keys are section names, values are strings.
-  The "personal" key must be a nested object with: name, email, phone, location, linkedin, github.
-  All other sections are plain text strings with newlines separating entries.
-- Omit sections that have no relevant content for this target. Keep the CV lean.
+- Harvard structure by default: Education → Experience → Projects → Skills. Reorder when the target calls for it (e.g. Publications first for academic CVs).
+- If the target is a named institution/program/company and no requirements are given, use search_web to find what is actually required before writing.
+- ATS: action verbs, quantified achievements where available. Do not fabricate numbers or titles, but do use strong, specific language that reflects the candidate's actual work.
+- **Emphasis**: Lean into the candidate's strongest and most relevant experiences. Lead bullets with the most impressive result, not a procedural description. If an achievement is genuinely notable (e.g. shipped to millions of users, first-author publication, measurable performance gain), make it stand out — but only if it actually happened. A subtle boost in framing ("Led development of X" vs "Helped with X") is fine when accurate; fabrication is not.
+- **Cross-reference awareness**: Before writing, mentally join all memory sections. If a project in "projects" was done at a company in "experience" (matching org, overlapping dates, or explicit note), surface it as a bullet under that experience entry rather than (or in addition to) a standalone project entry. Conversely, if a project has no workplace link, keep it in Projects. Never treat sections as isolated silos — the CV should read as a coherent narrative of one person's career.
+
+Output ONLY a valid JSON object with this exact schema — no markdown fences, no extra keys:
+
+{
+  "personal": {"name": "", "email": "", "phone": "", "location": "", "linkedin": "", "github": ""},
+  "summary": "",
+  "education": [
+    {"institution": "", "degree": "", "location": "", "date": "", "bullets": []}
+  ],
+  "experience": [
+    {"title": "", "organization": "", "location": "", "date": "", "bullets": []}
+  ],
+  "projects": [
+    {"name": "", "tech": "", "date": "", "url": "", "bullets": []}
+  ],
+  "skills": {"Technical": "", "Languages": ""},
+  "certifications": [],
+  "awards": [],
+  "publications": [],
+  "research_interests": ""
+}
+
+Schema rules:
+- "personal": nested object, all fields strings.
+- "summary": 1–3 sentence profile string; omit if not useful.
+- "education", "experience", "projects": arrays of entry objects. Each bullet is a complete action-verb sentence with quantified results where possible. Omit optional fields (location, url, etc.) when empty.
+- "skills": object where keys are category labels and values are comma-separated strings (e.g. {"Technical": "Python, C++, Docker", "Languages": "English, Turkish"}).
+- "certifications", "awards", "publications": flat arrays of strings.
+- "research_interests": plain string; include only for academic/research CVs.
+- Omit any top-level key entirely when it has no relevant content. Keep the CV lean.
 """
 
-_MERGE_SYSTEM = """You manage a professional background memory JSON. The user may give you new information to absorb OR a command to modify the memory (e.g. "delete my experience at X", "change my email to Y", "remove all certifications", "clear projects").
+_MERGE_SYSTEM = """You manage a professional background memory JSON. The user may give you new information to absorb OR a command to modify the memory.
 
-Steps:
-1. Determine whether the input is content to ingest or a command (or both).
-2. Apply the changes following the rules below.
-3. Return a JSON object with exactly two top-level keys:
+## Workflow — follow this order for EVERY request:
+
+1. **Analyze** the full current memory to understand what entries exist, their names, and how they relate to each other (e.g. a project that was done at a specific company, a role that spawned multiple projects).
+2. **Plan** internally: identify every entry the command touches — directly named AND indirectly related (e.g. if a company is renamed, find all projects/roles that reference that company and update them too; if a project is moved to a different experience, update both).
+3. **Apply** all planned changes atomically.
+4. Return a JSON object with exactly two top-level keys:
    - "memory": the full updated memory object (same schema as the input)
-   - "report": a concise 1-3 sentence human-readable summary of exactly what changed. If nothing changed, say so.
+   - "report": a 1-4 sentence summary of exactly what changed, including cross-references updated. If nothing changed, say so.
 
-Rules — read carefully:
-- **Fuzzy name matching**: When the user refers to a project, job, or entry by name, find the CLOSEST EXISTING ENTRY in the current memory by name similarity — do NOT create a new entry. Users often misspell or abbreviate names. For example, "vishybridx" matches "VisHybrid-X", "vishyybridx" matches "VisHybrid-X", "google internship" matches "Software Engineering Intern at Google LLC".
-- **Never replace a detailed entry with a sparse one**: When renaming or correcting an entry, keep ALL existing fields (description, dates, github, tech, etc.) from the original and only change the field(s) explicitly requested. A rich existing entry must never be discarded.
-- **Never create a new entry when the user is referencing an existing one**: If the user says "X is wrong, Y is correct", that means RENAME/CORRECT the existing entry whose name is closest to X — do not delete X and create a fresh Y from scratch.
-- **Deletions must be explicit**: Only remove an entry if the user clearly asks to remove/delete it. A correction command ("X should be Y") is NOT a deletion.
-- Preserve all existing data that was not explicitly changed or removed.
-- Do not add or remove top-level keys from the memory schema.
-- Output ONLY the JSON object — no markdown fences, no extra text.
+## Rules — read carefully:
+
+**Fuzzy name matching**: When the user refers to an entry by name, find the CLOSEST EXISTING ENTRY by name similarity — never create a new entry for something the user is referencing. Examples: "vishybridx" → "VisHybrid-X", "google internship" → "Software Engineering Intern at Google LLC".
+
+**Cross-reference awareness**: Projects, experiences, and education entries can be related. When ingesting content or applying a command:
+- If new content mentions a project done at a specific company, link or annotate it accordingly (e.g. set a "company" or "organization" field, or note it in the description).
+- If a command renames a company/org, scan ALL projects and notes that mention that company and update them.
+- If a project is described as part of a role (e.g. "I built X while working at Y"), add that project under the matching experience entry or annotate it with the organization.
+
+**Never replace a detailed entry with a sparse one**: Keep ALL existing fields when renaming or correcting — only change what was explicitly requested.
+
+**Never create a new entry when the user is referencing an existing one**: Corrections ("X is wrong, Y is correct") mean RENAME/CORRECT the closest matching entry.
+
+**Deletions must be explicit**: Only remove an entry if the user clearly says to remove/delete it.
+
+**Preserve all unchanged data.** Do not add or remove top-level keys from the memory schema.
+
+Output ONLY the JSON object — no markdown fences, no extra text.
 """
 
 
-def generate_cv(target: str, language: str) -> tuple[dict, bool]:
+def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, bool]:
     """Returns (cv_sections_dict, used_search_fallback)."""
     memory = memory_as_text()
     used_fallback = False
@@ -85,7 +124,7 @@ def generate_cv(target: str, language: str) -> tuple[dict, bool]:
 
     for _round in range(MAX_TOOL_ROUNDS):
         response = client.chat.completions.create(
-            model=MODEL,
+            model=model,
             messages=messages,
             tools=_TOOLS,
             tool_choice="auto",
@@ -139,7 +178,7 @@ def generate_cv(target: str, language: str) -> tuple[dict, bool]:
 
 
 def chat_with_memory(
-    history: list[dict], user_text: str, current_memory: dict
+    history: list[dict], user_text: str, current_memory: dict, model: str = MODEL
 ) -> tuple[dict, str, list[dict]]:
     """Multi-turn memory manager with always-fresh memory context.
 
@@ -160,7 +199,7 @@ def chat_with_memory(
     )
 
     response = client.chat.completions.create(
-        model=MODEL,
+        model=model,
         messages=groq_messages,
         temperature=0.1,
     )
@@ -187,7 +226,7 @@ def chat_with_memory(
     return result["memory"], result["report"], updated_history
 
 
-def merge_into_memory(text: str, current_memory: dict) -> tuple[dict, str]:
+def merge_into_memory(text: str, current_memory: dict, model: str = MODEL) -> tuple[dict, str]:
     """Use agent to process text (content or command) and update memory.
 
     Returns (updated_memory_dict, report_string).
@@ -204,7 +243,7 @@ def merge_into_memory(text: str, current_memory: dict) -> tuple[dict, str]:
     ]
 
     response = client.chat.completions.create(
-        model=MODEL,
+        model=model,
         messages=messages,
         temperature=0.1,
     )

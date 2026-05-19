@@ -5,28 +5,163 @@
   <link rel="stylesheet" href="{{ css_path }}">
 </head>
 <body>
-  <div class="cv-page">
+<div class="cv-page">
 
-    {% if sections.personal %}
-    <h1 class="cv-name">{{ sections.personal.name }}</h1>
-    <div class="cv-contact">
-      {%- set parts = [] -%}
-      {%- if sections.personal.email %}{% set _ = parts.append(sections.personal.email) %}{% endif -%}
-      {%- if sections.personal.phone %}{% set _ = parts.append(sections.personal.phone) %}{% endif -%}
-      {%- if sections.personal.location %}{% set _ = parts.append(sections.personal.location) %}{% endif -%}
-      {%- if sections.personal.linkedin %}{% set _ = parts.append(sections.personal.linkedin) %}{% endif -%}
-      {%- if sections.personal.github %}{% set _ = parts.append(sections.personal.github) %}{% endif -%}
-      {{ parts | join(' &nbsp;|&nbsp; ') }}
+  {# ── Personal header ── #}
+  {% if sections.personal %}
+  {% set p = sections.personal %}
+  <h1 class="cv-name">{{ p.name }}</h1>
+  <div class="cv-contact">
+    {%- set parts = [] -%}
+    {%- if p.email    %}{% set _ = parts.append(p.email)    %}{% endif -%}
+    {%- if p.phone    %}{% set _ = parts.append(p.phone)    %}{% endif -%}
+    {%- if p.location %}{% set _ = parts.append(p.location) %}{% endif -%}
+    {%- if p.linkedin %}{% set _ = parts.append(p.linkedin) %}{% endif -%}
+    {%- if p.github   %}{% set _ = parts.append(p.github)   %}{% endif -%}
+    {{ parts | join(' &nbsp;|&nbsp; ') }}
+  </div>
+  {% endif %}
+
+  {# ── Summary ── #}
+  {% if sections.summary %}
+  <div class="cv-section-heading">Summary</div>
+  <p class="cv-summary">{{ sections.summary }}</p>
+  {% endif %}
+
+  {# ── Education ── #}
+  {% if sections.education %}
+  <div class="cv-section-heading">Education</div>
+  {% for e in sections.education %}
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">{{ e.institution }}</span>
+      <span class="cv-entry-date">{{ e.date }}</span>
+    </div>
+    {% if e.degree or e.location %}
+    <div class="cv-entry-row">
+      <span class="cv-entry-title">{{ e.degree }}</span>
+      {% if e.location %}<span class="cv-entry-loc">{{ e.location }}</span>{% endif %}
     </div>
     {% endif %}
-
-    {% for section_name, content in sections.items() %}
-    {% if section_name != 'personal' and content %}
-    <h2 class="cv-section">{{ section_name }}</h2>
-    <div class="section-body">{{ content }}</div>
+    {% if e.bullets %}
+    <ul class="cv-bullets">
+      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+    </ul>
     {% endif %}
-    {% endfor %}
-
   </div>
+  {% endfor %}
+  {% endif %}
+
+  {# ── Experience ── #}
+  {% if sections.experience %}
+  <div class="cv-section-heading">Experience</div>
+  {% for e in sections.experience %}
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">{{ e.organization }}</span>
+      <span class="cv-entry-date">{{ e.date }}</span>
+    </div>
+    <div class="cv-entry-row">
+      <span class="cv-entry-title">{{ e.title }}</span>
+      {% if e.location %}<span class="cv-entry-loc">{{ e.location }}</span>{% endif %}
+    </div>
+    {% if e.bullets %}
+    <ul class="cv-bullets">
+      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {# ── Projects ── #}
+  {% if sections.projects %}
+  <div class="cv-section-heading">Projects</div>
+  {% for e in sections.projects %}
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">{{ e.name }}</span>
+      {% if e.date %}<span class="cv-entry-date">{{ e.date }}</span>{% endif %}
+    </div>
+    {% if e.tech %}
+    <div class="cv-entry-tech">{{ e.tech }}</div>
+    {% endif %}
+    {% if e.url %}
+    <div class="cv-entry-url">{{ e.url }}</div>
+    {% endif %}
+    {% if e.bullets %}
+    <ul class="cv-bullets">
+      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {# ── Skills ── #}
+  {% if sections.skills %}
+  <div class="cv-section-heading">Skills</div>
+  <table class="cv-skills-table">
+    {% if sections.skills is mapping %}
+      {% for cat, vals in sections.skills.items() %}
+      {% if vals %}
+      <tr>
+        <td class="cv-skills-cat">{{ cat }}:</td>
+        <td>{{ vals }}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    {% else %}
+    <tr><td>{{ sections.skills }}</td></tr>
+    {% endif %}
+  </table>
+  {% endif %}
+
+  {# ── Certifications ── #}
+  {% if sections.certifications %}
+  <div class="cv-section-heading">Certifications</div>
+  <ul class="cv-flat-list">
+    {% for item in sections.certifications %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {# ── Awards ── #}
+  {% if sections.awards %}
+  <div class="cv-section-heading">Awards</div>
+  <ul class="cv-flat-list">
+    {% for item in sections.awards %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {# ── Publications ── #}
+  {% if sections.publications %}
+  <div class="cv-section-heading">Publications</div>
+  <ul class="cv-flat-list">
+    {% for item in sections.publications %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {# ── Research interests ── #}
+  {% if sections.research_interests %}
+  <div class="cv-section-heading">Research Interests</div>
+  <p class="cv-plain">{{ sections.research_interests }}</p>
+  {% endif %}
+
+  {# ── Any extra sections the agent added ── #}
+  {% set known = ['personal','summary','education','experience','projects','skills','certifications','awards','publications','research_interests'] %}
+  {% for key, val in sections.items() %}
+  {% if key not in known and val %}
+  <div class="cv-section-heading">{{ key }}</div>
+  {% if val is string %}
+  <p class="cv-plain">{{ val }}</p>
+  {% elif val is iterable %}
+  <ul class="cv-flat-list">
+    {% for item in val %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
+  {% endfor %}
+
+</div>
 </body>
 </html>

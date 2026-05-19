@@ -15,6 +15,17 @@
       <option value="Turkish">Turkish</option>
     </select>
 
+    <label for="cv-model">AI Model</label>
+    <div class="model-row">
+      <select id="cv-model" name="model">
+        {% for m in models %}
+        <option value="{{ m.id }}"{% if m.id == default_model %} selected{% endif %}>{{ m.label }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="quota-btn" data-model-select="cv-model" data-quota-target="quota-cv">Check quota</button>
+    </div>
+    <div id="quota-cv" class="quota-info hidden"></div>
+
     <button type="submit" id="generate-btn">Generate CV</button>
   </form>
 

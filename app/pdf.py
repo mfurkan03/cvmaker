@@ -27,74 +27,216 @@ def _render_via_weasyprint(html_content: str) -> bytes:
     return HTML(string=html_content, base_url=str(_BASE)).write_pdf()
 
 
-def _render_via_fpdf2(sections: dict, language: str) -> bytes:
+def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
     """Fallback PDF renderer using fpdf2 (no GTK dependency).
 
-    Uses Arial TTF so that Unicode characters (Turkish, etc.) render correctly.
-    Falls back to the built-in Helvetica core font with latin-1 replacement when
-    the Arial TTF files cannot be found (non-Windows environments).
+    Uses Arial TTF for Unicode (Turkish, etc.). Falls back to Helvetica on
+    non-Windows systems where TTF files are absent.
     """
     from fpdf import FPDF  # noqa: PLC0415
 
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf = FPDF(unit="pt", format="letter")
+    pdf.set_margins(left=72, top=54, right=72)   # 1in sides, 0.75in top
+    pdf.set_auto_page_break(auto=True, margin=54)
     pdf.add_page()
 
-    # Decide font strategy based on TTF availability
     use_ttf = _ARIAL_REGULAR.exists() and _ARIAL_BOLD.exists()
     if use_ttf:
-        pdf.add_font("Arial", "", str(_ARIAL_REGULAR))
-        pdf.add_font("Arial", "B", str(_ARIAL_BOLD))
-        font_name = "Arial"
+        pdf.add_font("CV", "", str(_ARIAL_REGULAR))
+        pdf.add_font("CV", "B", str(_ARIAL_BOLD))
+        try:
+            _ARIAL_ITALIC = Path(r"C:\Windows\Fonts\ariali.ttf")
+            if _ARIAL_ITALIC.exists():
+                pdf.add_font("CV", "I", str(_ARIAL_ITALIC))
+            else:
+                pdf.add_font("CV", "I", str(_ARIAL_REGULAR))
+        except Exception:
+            pdf.add_font("CV", "I", str(_ARIAL_REGULAR))
+        font = "CV"
     else:
-        font_name = "Helvetica"
+        font = "Helvetica"
 
-    def _safe(text: str) -> str:
-        """For core fonts: drop chars outside latin-1 range."""
-        if use_ttf:
-            return text
-        return text.encode("latin-1", errors="replace").decode("latin-1")
+    def s(text) -> str:
+        """Coerce to str; drop non-latin-1 chars for core fonts."""
+        t = str(text) if text else ""
+        if not use_ttf:
+            t = t.encode("latin-1", errors="replace").decode("latin-1")
+        return t
 
-    # ---- name ----
+    W = pdf.epw  # effective page width
+
+    def section_heading(title: str):
+        pdf.ln(8)
+        pdf.set_font(font, "B", 10.5)
+        pdf.cell(W, 12, s(title.upper()), new_x="LMARGIN", new_y="NEXT")
+        y = pdf.get_y()
+        pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
+        pdf.ln(3)
+
+    def entry_row(left: str, right: str, left_style="B", right_style="", size=10.5):
+        lw = W * 0.72
+        rw = W * 0.28
+        pdf.set_font(font, left_style, size)
+        pdf.cell(lw, 13, s(left), new_x="RIGHT", new_y="LAST")
+        pdf.set_font(font, right_style, size - 0.5)
+        pdf.cell(rw, 13, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
+
+    def entry_sub_row(left: str, right: str, size=10.5):
+        lw = W * 0.72
+        rw = W * 0.28
+        pdf.set_font(font, "I", size)
+        pdf.cell(lw, 12, s(left), new_x="RIGHT", new_y="LAST")
+        pdf.set_font(font, "", size - 0.5)
+        pdf.cell(rw, 12, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
+
+    def bullets(items: list):
+        pdf.set_font(font, "", 10.5)
+        for item in items:
+            text = s(item)
+            if not text:
+                continue
+            # hanging indent: bullet at x, text indented
+            pdf.set_x(pdf.l_margin + 10)
+            pdf.cell(8, 13, "•", new_x="RIGHT", new_y="LAST")
+            pdf.multi_cell(W - 18, 13, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    def flat_list(items: list):
+        pdf.set_font(font, "", 10.5)
+        for item in items:
+            text = s(item)
+            if not text:
+                continue
+            pdf.set_x(pdf.l_margin + 10)
+            pdf.cell(8, 13, "•", new_x="RIGHT", new_y="LAST")
+            pdf.multi_cell(W - 18, 13, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(2)
+
+    # ── Personal header ──
     personal = sections.get("personal", {})
     name = personal.get("name", "")
     if name:
-        pdf.set_font(font_name, style="B", size=16)
-        pdf.cell(0, 10, _safe(name), new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.set_font(font, "B", 20)
+        pdf.cell(W, 22, s(name), align="C", new_x="LMARGIN", new_y="NEXT")
 
-    # ---- contact line ----
     contact_parts = [
-        personal.get("email", ""),
-        personal.get("phone", ""),
-        personal.get("location", ""),
-        personal.get("linkedin", ""),
+        personal.get("email", ""), personal.get("phone", ""),
+        personal.get("location", ""), personal.get("linkedin", ""),
         personal.get("github", ""),
     ]
     contact_parts = [p for p in contact_parts if p]
     if contact_parts:
-        pdf.set_font(font_name, size=10)
-        pdf.cell(
-            0, 6, _safe("  |  ".join(contact_parts)),
-            new_x="LMARGIN", new_y="NEXT", align="C",
-        )
+        pdf.set_font(font, "", 9.5)
+        pdf.multi_cell(W, 13, s("  |  ".join(contact_parts)), align="C", new_x="LMARGIN", new_y="NEXT")
 
-    pdf.ln(4)
+    # ── Summary ──
+    summary = sections.get("summary", "")
+    if summary:
+        section_heading("Summary")
+        pdf.set_font(font, "", 10.5)
+        pdf.multi_cell(W, 13, s(summary), new_x="LMARGIN", new_y="NEXT")
 
-    # ---- sections ----
-    for section_name, content in sections.items():
-        if section_name == "personal" or not content:
+    # ── Education ──
+    edu_list = sections.get("education", [])
+    if edu_list:
+        section_heading("Education")
+        for e in edu_list:
+            entry_row(e.get("institution", ""), e.get("date", ""))
+            deg = e.get("degree", "")
+            loc = e.get("location", "")
+            if deg or loc:
+                entry_sub_row(deg, loc)
+            if e.get("bullets"):
+                bullets(e["bullets"])
+            else:
+                pdf.ln(3)
+
+    # ── Experience ──
+    exp_list = sections.get("experience", [])
+    if exp_list:
+        section_heading("Experience")
+        for e in exp_list:
+            entry_row(e.get("organization", ""), e.get("date", ""))
+            entry_sub_row(e.get("title", ""), e.get("location", ""))
+            if e.get("bullets"):
+                bullets(e["bullets"])
+            else:
+                pdf.ln(3)
+
+    # ── Projects ──
+    proj_list = sections.get("projects", [])
+    if proj_list:
+        section_heading("Projects")
+        for e in proj_list:
+            entry_row(e.get("name", ""), e.get("date", ""))
+            tech = e.get("tech", "")
+            url = e.get("url", "")
+            if tech:
+                pdf.set_font(font, "", 9.5)
+                pdf.cell(W, 12, s(tech), new_x="LMARGIN", new_y="NEXT")
+            if url:
+                pdf.set_font(font, "", 9.5)
+                pdf.cell(W, 12, s(url), new_x="LMARGIN", new_y="NEXT")
+            if e.get("bullets"):
+                bullets(e["bullets"])
+            else:
+                pdf.ln(3)
+
+    # ── Skills ──
+    skills = sections.get("skills")
+    if skills:
+        section_heading("Skills")
+        if isinstance(skills, dict):
+            for cat, vals in skills.items():
+                if not vals:
+                    continue
+                pdf.set_font(font, "B", 10.5)
+                label = s(cat) + ": "
+                lw = pdf.get_string_width(label) + 2
+                pdf.cell(lw, 13, label, new_x="RIGHT", new_y="LAST")
+                pdf.set_font(font, "", 10.5)
+                pdf.multi_cell(W - lw, 13, s(vals), new_x="LMARGIN", new_y="NEXT")
+        else:
+            pdf.set_font(font, "", 10.5)
+            pdf.multi_cell(W, 13, s(skills), new_x="LMARGIN", new_y="NEXT")
+
+    # ── Certifications ──
+    certs = sections.get("certifications", [])
+    if certs:
+        section_heading("Certifications")
+        flat_list(certs)
+
+    # ── Awards ──
+    awards = sections.get("awards", [])
+    if awards:
+        section_heading("Awards")
+        flat_list(awards)
+
+    # ── Publications ──
+    pubs = sections.get("publications", [])
+    if pubs:
+        section_heading("Publications")
+        flat_list(pubs)
+
+    # ── Research interests ──
+    ri = sections.get("research_interests", "")
+    if ri:
+        section_heading("Research Interests")
+        pdf.set_font(font, "", 10.5)
+        pdf.multi_cell(W, 13, s(ri), new_x="LMARGIN", new_y="NEXT")
+
+    # ── Any extra string sections the agent added ──
+    known = {"personal", "summary", "education", "experience", "projects",
+             "skills", "certifications", "awards", "publications", "research_interests"}
+    for key, val in sections.items():
+        if key in known or not val:
             continue
-
-        # Section heading
-        pdf.set_font(font_name, style="B", size=11)
-        pdf.cell(0, 7, _safe(section_name.upper()), new_x="LMARGIN", new_y="NEXT")
-        pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + pdf.epw, pdf.get_y())
-        pdf.ln(1)
-
-        # Section body
-        pdf.set_font(font_name, size=11)
-        pdf.multi_cell(0, 6, _safe(content))
-        pdf.ln(2)
+        section_heading(key)
+        if isinstance(val, list):
+            flat_list(val)
+        else:
+            pdf.set_font(font, "", 10.5)
+            pdf.multi_cell(W, 13, s(val), new_x="LMARGIN", new_y="NEXT")
 
     return bytes(pdf.output())
 
