@@ -49,15 +49,18 @@ _MERGE_SYSTEM = """You manage a professional background memory JSON. The user ma
 
 Steps:
 1. Determine whether the input is content to ingest or a command (or both).
-2. Apply the appropriate changes to the memory.
+2. Apply the changes following the rules below.
 3. Return a JSON object with exactly two top-level keys:
    - "memory": the full updated memory object (same schema as the input)
-   - "report": a concise 1-3 sentence human-readable summary of exactly what changed (e.g. "Added project 'CV Maker'. Updated email to furkan@example.com."). If nothing changed, say so.
+   - "report": a concise 1-3 sentence human-readable summary of exactly what changed. If nothing changed, say so.
 
-Rules:
+Rules — read carefully:
+- **Fuzzy name matching**: When the user refers to a project, job, or entry by name, find the CLOSEST EXISTING ENTRY in the current memory by name similarity — do NOT create a new entry. Users often misspell or abbreviate names. For example, "vishybridx" matches "VisHybrid-X", "vishyybridx" matches "VisHybrid-X", "google internship" matches "Software Engineering Intern at Google LLC".
+- **Never replace a detailed entry with a sparse one**: When renaming or correcting an entry, keep ALL existing fields (description, dates, github, tech, etc.) from the original and only change the field(s) explicitly requested. A rich existing entry must never be discarded.
+- **Never create a new entry when the user is referencing an existing one**: If the user says "X is wrong, Y is correct", that means RENAME/CORRECT the existing entry whose name is closest to X — do not delete X and create a fresh Y from scratch.
+- **Deletions must be explicit**: Only remove an entry if the user clearly asks to remove/delete it. A correction command ("X should be Y") is NOT a deletion.
 - Preserve all existing data that was not explicitly changed or removed.
 - Do not add or remove top-level keys from the memory schema.
-- The "report" must accurately describe the actual changes made, not what the user asked for.
 - Output ONLY the JSON object — no markdown fences, no extra text.
 """
 
