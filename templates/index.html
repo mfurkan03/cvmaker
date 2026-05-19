@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block nav_generate %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Generate CV</h1>
+  <p class="hint">Paste a job description, or just name a target (e.g. "Google SWE internship", "ETH Zurich MSc CS 2025").</p>
+
+  <form id="generate-form">
+    <label for="target">Target / Job Description</label>
+    <textarea id="target" name="target" rows="8" placeholder="Paste job description here, or type a target name..."></textarea>
+
+    <label for="language">Output Language</label>
+    <select id="language" name="language">
+      <option value="English">English</option>
+      <option value="Turkish">Turkish</option>
+    </select>
+
+    <button type="submit" id="generate-btn">Generate CV</button>
+  </form>
+
+  <div id="status" class="status hidden"></div>
+  <div id="fallback-warning" class="warning hidden">
+    Search quota exhausted — used DuckDuckGo fallback for web research.
+  </div>
+  <a id="download-link" class="download-btn hidden" href="#" download="cv.pdf">Download CV (PDF)</a>
+</div>
+{% endblock %}

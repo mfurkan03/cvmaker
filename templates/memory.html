@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block nav_memory %}active{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>My Memory</h1>
+  <p class="hint">Your background data is stored in <code>memory.json</code>. Add info here and the CV agent will use it.</p>
+
+  <section>
+    <h2>Add from text</h2>
+    <form id="ingest-text-form">
+      <textarea id="ingest-text" rows="5" placeholder="Paste any text about yourself — work history, project descriptions, achievements..."></textarea>
+      <button type="submit">Add to Memory</button>
+    </form>
+    <div id="ingest-text-status" class="status hidden"></div>
+  </section>
+
+  <section>
+    <h2>Add from file</h2>
+    <form id="ingest-file-form">
+      <input type="file" id="ingest-file" accept=".pdf,.docx,.txt">
+      <button type="submit">Upload &amp; Add to Memory</button>
+    </form>
+    <div id="ingest-file-status" class="status hidden"></div>
+  </section>
+
+  <section>
+    <h2>Current Memory</h2>
+    <pre id="memory-display">{{ memory_json }}</pre>
+  </section>
+</div>
+{% endblock %}
