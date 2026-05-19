@@ -10,3 +10,8 @@ build/
 venv/
 memory.json
 generated_cvs/
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+*.log
