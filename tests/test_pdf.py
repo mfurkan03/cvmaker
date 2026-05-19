@@ -62,3 +62,23 @@ def test_render_cv_pdf_turkish():
     result = render_cv_pdf(sections, "Turkish")
     assert isinstance(result, bytes)
     assert result[:4] == b"%PDF"
+
+
+def test_render_cv_html_editable_has_contenteditable_and_paths():
+    from app.pdf import render_cv_html
+    sections = {
+        "personal": {"name": "Test User", "title": "Dev", "email": "t@t.com",
+                     "phone": "", "location": "", "linkedin": "", "github": ""},
+        "summary": "A developer.",
+    }
+    html = render_cv_html(sections, "English", editable=True)
+    assert 'contenteditable="true"' in html
+    assert 'data-cv-path="personal.name"' in html
+    assert 'data-cv-path="summary"' in html
+
+
+def test_render_cv_html_not_editable_has_no_contenteditable():
+    from app.pdf import render_cv_html
+    sections = {"personal": {"name": "Test User"}}
+    html = render_cv_html(sections, "English", editable=False)
+    assert "contenteditable" not in html

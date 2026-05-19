@@ -13,13 +13,19 @@ _ARIAL_REGULAR = Path(r"C:\Windows\Fonts\arial.ttf")
 _ARIAL_BOLD = Path(r"C:\Windows\Fonts\arialbd.ttf")
 
 
-def _render_html(sections: dict, language: str) -> str:
+def _render_html(sections: dict, language: str, editable: bool = False) -> str:
     template = _env.get_template("cv_harvard.html")
     return template.render(
         sections=sections,
         language=language,
         css_path=_CSS_PATH.as_uri(),
+        editable=editable,
     )
+
+
+def render_cv_html(sections: dict, language: str, editable: bool = False) -> str:
+    """Return rendered CV HTML. Pass editable=True to add contenteditable + data-cv-path attrs."""
+    return _render_html(sections, language, editable=editable)
 
 
 def _render_via_weasyprint(html_content: str) -> bytes:
@@ -253,7 +259,7 @@ def render_cv_pdf(sections: dict, language: str) -> bytes:
     if GTK/Pango libraries required by WeasyPrint are not available
     (common on Windows without the GTK runtime).
     """
-    html_content = _render_html(sections, language)
+    html_content = _render_html(sections, language, editable=False)
     try:
         return _render_via_weasyprint(html_content)
     except OSError as exc:
