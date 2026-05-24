@@ -99,28 +99,80 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       btn.disabled = true;
       btn.textContent = "Generating…";
-      statusEl.textContent = "Agent is working — this may take 15–30 seconds…";
-      statusEl.classList.remove("hidden");
       warningEl.classList.add("hidden");
+
+      statusEl.innerHTML =
+        '<div id="pipeline-progress">' +
+          '<span id="step-label">Starting…</span>' +
+          '<div class="pipeline-bar-track">' +
+            '<div id="pipeline-bar" class="pipeline-bar"></div>' +
+          '</div>' +
+        '</div>';
+      statusEl.classList.remove("hidden");
 
       const formData = new FormData(generateForm);
       try {
-        const resp = await fetch("/generate", { method: "POST", body: formData });
-        let data;
-        try { data = await resp.json(); } catch { data = {}; }
+        const resp = await fetch("/generate/pipeline", { method: "POST", body: formData });
         if (!resp.ok) {
+          let data = {};
+          try { data = await resp.json(); } catch {}
           statusEl.textContent = "Error: " + (data.error || resp.statusText);
           return;
         }
-        if (data.used_fallback) warningEl.classList.remove("hidden");
 
-        // Store live state
-        window.__CV_SECTIONS__ = data.sections;
-        window.__CV_LANGUAGE__ = langEl ? langEl.value : "English";
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let doneReceived = false;
 
-        // Show preview
-        showCvPreview(data.html);
-        statusEl.textContent = "CV generated. Click any text to edit, or use the refine panel below.";
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              let msg;
+              try { msg = JSON.parse(line.slice(6)); } catch { continue; }
+
+              if (msg.type === "progress") {
+                const pct = ((msg.step - 1) / msg.total) * 100;
+                const bar = document.getElementById("pipeline-bar");
+                const label = document.getElementById("step-label");
+                if (bar) bar.style.width = pct + "%";
+                if (label) label.textContent = "Step " + msg.step + " of " + msg.total + " — " + msg.label;
+
+              } else if (msg.type === "done") {
+                doneReceived = true;
+                const bar = document.getElementById("pipeline-bar");
+                if (bar) bar.style.width = "100%";
+                await new Promise(r => setTimeout(r, 420));
+
+                window.__CV_SECTIONS__ = msg.sections;
+                window.__CV_LANGUAGE__ = langEl ? langEl.value : "English";
+                if (msg.used_fallback) warningEl.classList.remove("hidden");
+                showCvPreview(msg.html);
+                statusEl.textContent = "CV generated. Click any text to edit, or use the refine panel below.";
+                break;
+
+              } else if (msg.type === "error") {
+                doneReceived = true;
+                statusEl.textContent = "Error: " + msg.error;
+                break;
+              }
+            }
+            if (doneReceived) break;
+          }
+        } finally {
+          reader.cancel().catch(() => {});
+        }
+
+        if (!doneReceived) {
+          statusEl.textContent = "Error: Stream ended unexpectedly. Please try again.";
+        }
       } catch (err) {
         statusEl.textContent = "Network error: " + err.message;
       } finally {

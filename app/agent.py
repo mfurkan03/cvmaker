@@ -152,7 +152,7 @@ _MERGE_SYSTEM = """You manage a professional background memory JSON. The user ma
 
 **CRITICAL type rules — violating any of these is a bug:**
 - `skills.technical`, `skills.soft`, `skills.languages` → always `[str]`, never objects. Languages encode level inline: `"English (C1)"`, `"Turkish (C2 Native)"`. NEVER `{"name":..,"level":..}`.
-- `certifications`, `awards` → `[str]`, plain strings only.
+- `certifications`, `awards` → `[str]`, plain strings only. Certifications must include the issuing platform: "Platform — Certificate Name" (e.g. "Coursera — Machine Learning Specialization", "Udemy — The Web Developer Bootcamp").
 - `highlights`, `technologies` inside list entries → `[str]`, never objects.
 - `personal` fields → all plain strings, never nested.
 - `summary`, `notes` → plain strings, never arrays or objects.
@@ -240,34 +240,129 @@ def _fix_memory(mem: dict) -> dict:
     return mem
 
 
-_REFINE_SYSTEM = (
-    "You are a CV editor. You receive a CV as JSON and an edit instruction. "
-    "Apply ONLY the requested change. Return the complete updated CV JSON with "
-    "no other modifications. Output raw JSON only — no markdown fences, no explanation."
+_REFINE_SYSTEM = """You are a CV editor. You receive:
+1. A CV as JSON (the current state).
+2. The candidate's full background memory (a separate JSON with all their raw data).
+3. An edit instruction.
+
+## CRITICAL: When the instruction references a project, experience, or skill by name
+- ALWAYS search the memory for it using fuzzy/case-insensitive matching.
+  e.g. "vishybridx" matches memory entry with name "VisHybrid-X".
+- Extract ALL fields from the matching memory entry and map them to the CV format below.
+- NEVER write a stub entry with just the name — always populate bullets, tech, date, url from memory.
+
+## Memory → CV field mapping
+Projects:
+- memory `projects[].name`          → cv `projects[].name`
+- memory `projects[].highlights`    → cv `projects[].bullets` (rewrite as strong action-verb sentences)
+- memory `projects[].description`   → incorporate into bullets if highlights are sparse
+- memory `projects[].technologies`  → cv `projects[].tech` (join as comma-separated string)
+- memory `projects[].start_date` + `end_date` → cv `projects[].date` (e.g. "Jan 2024 – Mar 2024")
+- memory `projects[].github`        → cv `projects[].url`
+
+Experience:
+- memory `experience[].company`     → cv `experience[].organization`
+- memory `experience[].role`        → cv `experience[].title`
+- memory `experience[].highlights`  → cv `experience[].bullets`
+- memory `experience[].startDate` + `endDate` → cv `experience[].date`
+
+## CV project entry schema (every field must be populated if data exists in memory)
+{"name": "", "tech": "", "date": "", "url": "", "bullets": []}
+
+## Rules
+- Return the COMPLETE updated CV JSON (all sections, not just the changed one).
+- Only change what the instruction asks; leave everything else exactly as-is.
+- Output raw JSON only — no markdown fences, no explanation."""
+
+_STEP_ALIGN = (
+    "Align this CV to the target role: {target}. "
+    "Strengthen bullet points to lead with the most relevant skills and keywords the role demands. "
+    "Update the summary to speak directly to this specific position. "
+    "Reorder sections if appropriate (e.g. Education before Experience for academic targets). "
+    "Do not invent or fabricate anything not already in the candidate's background."
+)
+
+_STEP_PROJECTS = (
+    "Review every project listed in the candidate's memory. "
+    "Identify any projects relevant to '{target}' that are not yet in this CV. "
+    "Add any missing relevant projects with full detail from memory "
+    "(name, tech, date, url, bullets). "
+    "Do not remove or modify any existing CV entries."
+)
+
+_STEP_POLISH = (
+    "Polish this CV for download: "
+    "(1) Tighten any verbose bullet to 1-2 lines maximum. "
+    "(2) Ensure every bullet starts with a strong past-tense action verb "
+    "(e.g. Built, Led, Designed, Implemented). "
+    "(3) Remove filler phrases like 'Responsible for' or 'Helped with'. "
+    "(4) Fix any inconsistent tense — past tense for completed roles, present for current. "
+    "(5) Ensure a professional tone throughout. "
+    "Do not add or remove sections, and do not change any facts."
 )
 
 
 def refine_cv_section(sections: dict, instruction: str, model: str) -> dict:
     """Apply a targeted natural-language edit to cv_sections. Returns updated sections."""
+    memory = memory_as_text()
     resp = _call(
         model,
         messages=[
             {"role": "system", "content": _REFINE_SYSTEM},
             {
                 "role": "user",
-                "content": f"CV:\n{json.dumps(sections, ensure_ascii=False)}\n\nInstruction: {instruction}",
+                "content": (
+                    f"Candidate memory:\n{memory}\n\n"
+                    f"CV:\n{json.dumps(sections, ensure_ascii=False)}\n\n"
+                    f"Instruction: {instruction}"
+                ),
             },
         ],
         temperature=0.3,
+        max_tokens=8192,
     )
-    content = resp.choices[0].message.content
-    updated = _extract_json(content)
-    if set(updated.keys()) != set(sections.keys()):
-        raise ValueError(
-            f"Refine returned unexpected top-level keys. "
-            f"Got {sorted(updated.keys())}, expected {sorted(sections.keys())}."
+    choice = resp.choices[0]
+    if choice.finish_reason == "length":
+        raise RuntimeError(
+            "Refine output was truncated (hit token limit). "
+            "Try a smaller CV or a shorter instruction."
         )
-    return updated
+    content = choice.message.content
+    updated = _extract_json(content)
+    if not isinstance(updated, dict):
+        raise ValueError(f"Refine returned non-dict JSON: {type(updated).__name__}.")
+    # Merge: start from original to preserve any keys the model dropped, then overlay model output.
+    return {**sections, **updated}
+
+
+def generate_cv_pipeline(
+    target: str,
+    language: str,
+    model: str = MODEL,
+    on_progress=None,
+) -> tuple[dict, bool]:
+    """Run the 4-step CV generation pipeline.
+
+    Calls on_progress(step, total, label) before each step if provided.
+    Returns (final_cv_sections, used_fallback).
+    """
+    def _progress(step: int, label: str) -> None:
+        if on_progress:
+            on_progress(step, 4, label)
+
+    _progress(1, "Creating initial CV…")
+    sections, used_fallback = generate_cv(target, language, model)
+
+    _progress(2, "Aligning with job description…")
+    sections = refine_cv_section(sections, _STEP_ALIGN.format(target=target), model)
+
+    _progress(3, "Adding relevant projects…")
+    sections = refine_cv_section(sections, _STEP_PROJECTS.format(target=target), model)
+
+    _progress(4, "Polishing final CV…")
+    sections = refine_cv_section(sections, _STEP_POLISH, model)
+
+    return sections, used_fallback
 
 
 def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, bool]:
@@ -463,6 +558,7 @@ Rules:
 - CRITICAL — add_entry vs update_entry: check the ENTRY INDEX first. If the entry name already exists → update_entry. If it does not exist at all → add_entry. NEVER call add_entry for something already in the index.
 - CRITICAL — match field: use the EXACT name from the ENTRY INDEX. If two similar names exist, pick the one with more detail (github link, longer description, more fields).
 - skills.languages items must be plain strings: "English (C1)", "Turkish (C2 Native)". Never use objects.
+- certifications items must include the issuing platform: "Platform — Certificate Name" (e.g. "Coursera — Machine Learning Specialization", "Udemy — The Web Developer Bootcamp"). If the user mentions a certificate without a platform, still ask nothing — just use whatever they provided.
 - After all tool calls, always call finish() with a summary of what changed.
 - If nothing changed, call finish() with "No changes were necessary."
 - Never hallucinate or invent information the user did not provide.

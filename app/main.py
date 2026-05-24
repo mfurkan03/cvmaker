@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.memory import load_memory, save_memory, backup_memory, restore_memory
-from app.agent import generate_cv, merge_into_memory, chat_with_memory, refine_cv_section, MODEL, get_quota_cache
+from app.agent import generate_cv, generate_cv_pipeline, merge_into_memory, chat_with_memory, refine_cv_section, MODEL, get_quota_cache
 from app.pdf import render_cv_pdf, render_cv_html
 from app.ingest import extract_text
 from app.github import import_github_projects
@@ -82,7 +82,7 @@ async def memory_chat(request: Request):
     current = load_memory()
     try:
         updated, report, new_history = chat_with_memory(history, text, current, model)
-    except (RuntimeError, ValueError) as exc:
+    except Exception as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
     backup_memory()
     save_memory(updated)
@@ -149,6 +149,52 @@ async def generate(
         "html": html,
         "used_fallback": used_fallback,
     })
+
+
+@app.post("/generate/pipeline")
+async def generate_pipeline(
+    target: str = Form(...),
+    language: str = Form("English"),
+    model: str = Form(MODEL),
+):
+    import queue as _queue
+    q: _queue.Queue = _queue.Queue()
+
+    def run() -> None:
+        def on_progress(step: int, total: int, label: str) -> None:
+            q.put({"type": "progress", "step": step, "total": total, "label": label})
+        try:
+            sections, used_fallback = generate_cv_pipeline(target, language, model, on_progress)
+            html = render_cv_html(sections, language, editable=True)
+            q.put({"type": "done", "sections": sections, "html": html, "used_fallback": used_fallback})
+        except Exception as exc:
+            q.put({"type": "error", "error": str(exc)})
+
+    async def stream():
+        import asyncio
+        task = asyncio.create_task(asyncio.to_thread(run))
+        while not task.done():
+            try:
+                msg = q.get_nowait()
+                yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
+            except _queue.Empty:
+                await asyncio.sleep(0.3)
+        while True:
+            try:
+                msg = q.get_nowait()
+                yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
+            except _queue.Empty:
+                break
+        try:
+            task.result()
+        except Exception:
+            pass
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/cv/refine")

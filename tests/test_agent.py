@@ -160,3 +160,52 @@ def test_refine_cv_section_raises_on_unexpected_keys():
         mock_client.chat.completions.with_raw_response.create.return_value = _make_raw_response(json.dumps(bad))
         with pytest.raises(ValueError):
             refine_cv_section(original, "add something", "llama-3.3-70b-versatile")
+
+
+def test_generate_cv_pipeline_runs_four_steps_and_calls_progress():
+    from app.agent import generate_cv_pipeline
+    from unittest.mock import patch
+
+    initial_sections = {
+        "personal": {"name": "Test User", "title": "Engineer", "email": "t@t.com",
+                     "phone": "", "location": "", "linkedin": "", "github": ""},
+        "summary": "A developer.",
+        "education": [], "experience": [], "projects": [],
+        "skills": {}, "certifications": [], "awards": [], "publications": [],
+        "research_interests": "",
+    }
+    polished_sections = {**initial_sections, "summary": "Polished developer."}
+
+    progress_calls = []
+
+    def on_progress(step, total, label):
+        progress_calls.append({"step": step, "total": total, "label": label})
+
+    with patch("app.agent.generate_cv", return_value=(initial_sections, False)) as mock_gen:
+        with patch("app.agent.refine_cv_section", return_value=polished_sections) as mock_refine:
+            sections, used_fallback = generate_cv_pipeline(
+                "Software Engineer at Acme", "English", on_progress=on_progress
+            )
+
+    assert mock_gen.call_count == 1
+    assert mock_refine.call_count == 3
+    assert len(progress_calls) == 4
+    assert progress_calls[0]["step"] == 1
+    assert progress_calls[1]["step"] == 2
+    assert progress_calls[2]["step"] == 3
+    assert progress_calls[3]["step"] == 4
+    assert all(p["total"] == 4 for p in progress_calls)
+    assert isinstance(sections, dict)
+    assert used_fallback is False
+
+
+def test_generate_cv_pipeline_propagates_used_fallback():
+    from app.agent import generate_cv_pipeline
+    from unittest.mock import patch
+
+    base = {"personal": {"name": "X"}}
+    with patch("app.agent.generate_cv", return_value=(base, True)):
+        with patch("app.agent.refine_cv_section", return_value=base):
+            _, used_fallback = generate_cv_pipeline("any target", "English")
+
+    assert used_fallback is True
