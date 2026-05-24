@@ -13,19 +13,19 @@ _ARIAL_REGULAR = Path(r"C:\Windows\Fonts\arial.ttf")
 _ARIAL_BOLD = Path(r"C:\Windows\Fonts\arialbd.ttf")
 
 
-def _render_html(sections: dict, language: str, editable: bool = False) -> str:
+def _render_html(sections: dict, language: str, editable: bool = False, css_path: str | None = None) -> str:
     template = _env.get_template("cv_harvard.html")
     return template.render(
         sections=sections,
         language=language,
-        css_path=_CSS_PATH.as_uri(),
+        css_path=css_path or _CSS_PATH.as_uri(),
         editable=editable,
     )
 
 
 def render_cv_html(sections: dict, language: str, editable: bool = False) -> str:
-    """Return rendered CV HTML. Pass editable=True to add contenteditable + data-cv-path attrs."""
-    return _render_html(sections, language, editable=editable)
+    """Return rendered CV HTML for browser preview. Uses server-relative CSS URL."""
+    return _render_html(sections, language, editable=editable, css_path="/static/css/cv.css")
 
 
 def _render_via_weasyprint(html_content: str) -> bytes:
@@ -72,27 +72,27 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
     W = pdf.epw  # effective page width
 
     def section_heading(title: str):
-        pdf.ln(8)
-        pdf.set_font(font, "B", 10.5)
-        pdf.cell(W, 12, s(title.upper()), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(12)
+        pdf.set_font(font, "B", 11)
+        pdf.cell(W, 13, s(title.upper()), new_x="LMARGIN", new_y="NEXT")
         y = pdf.get_y()
         pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
-        pdf.ln(3)
+        pdf.ln(4)
 
     def entry_row(left: str, right: str, left_style="B", right_style="", size=10.5):
         lw = W * 0.72
         rw = W * 0.28
         pdf.set_font(font, left_style, size)
-        pdf.cell(lw, 13, s(left), new_x="RIGHT", new_y="LAST")
-        pdf.set_font(font, right_style, size - 0.5)
-        pdf.cell(rw, 13, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(lw, 12, s(left), new_x="RIGHT", new_y="LAST")
+        pdf.set_font(font, right_style, 9.5)
+        pdf.cell(rw, 12, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
 
     def entry_sub_row(left: str, right: str, size=10.5):
         lw = W * 0.72
         rw = W * 0.28
         pdf.set_font(font, "I", size)
         pdf.cell(lw, 12, s(left), new_x="RIGHT", new_y="LAST")
-        pdf.set_font(font, "", size - 0.5)
+        pdf.set_font(font, "", 9.5)
         pdf.cell(rw, 12, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
 
     def bullets(items: list):
@@ -103,9 +103,9 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
                 continue
             # hanging indent: bullet at x, text indented
             pdf.set_x(pdf.l_margin + 10)
-            pdf.cell(8, 13, "•", new_x="RIGHT", new_y="LAST")
-            pdf.multi_cell(W - 18, 13, text, new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(2)
+            pdf.cell(8, 12, "•", new_x="RIGHT", new_y="LAST")
+            pdf.multi_cell(W - 18, 12, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
 
     def flat_list(items: list):
         pdf.set_font(font, "", 10.5)
@@ -114,16 +114,16 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
             if not text:
                 continue
             pdf.set_x(pdf.l_margin + 10)
-            pdf.cell(8, 13, "•", new_x="RIGHT", new_y="LAST")
-            pdf.multi_cell(W - 18, 13, text, new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(2)
+            pdf.cell(8, 12, "•", new_x="RIGHT", new_y="LAST")
+            pdf.multi_cell(W - 18, 12, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
 
     # ── Personal header ──
     personal = sections.get("personal", {})
     name = personal.get("name", "")
     if name:
-        pdf.set_font(font, "B", 20)
-        pdf.cell(W, 22, s(name), align="C", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font(font, "B", 22)
+        pdf.cell(W, 24, s(name), align="C", new_x="LMARGIN", new_y="NEXT")
 
     contact_parts = [
         personal.get("email", ""), personal.get("phone", ""),
@@ -139,6 +139,13 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
     if contact_parts:
         pdf.set_font(font, "", 9.5)
         pdf.multi_cell(W, 13, s("  |  ".join(contact_parts)), align="C", new_x="LMARGIN", new_y="NEXT")
+
+    if name or contact_parts:
+        # thin rule closing the header block
+        pdf.ln(3)
+        y = pdf.get_y()
+        pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
+        pdf.ln(4)
 
     # ── Summary ──
     summary = sections.get("summary", "")
@@ -160,7 +167,7 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
             if e.get("bullets"):
                 bullets(e["bullets"])
             else:
-                pdf.ln(3)
+                pdf.ln(5)
 
     # ── Experience ──
     exp_list = sections.get("experience", [])
@@ -172,7 +179,7 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
             if e.get("bullets"):
                 bullets(e["bullets"])
             else:
-                pdf.ln(3)
+                pdf.ln(5)
 
     # ── Projects ──
     proj_list = sections.get("projects", [])
@@ -191,7 +198,7 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
             if e.get("bullets"):
                 bullets(e["bullets"])
             else:
-                pdf.ln(3)
+                pdf.ln(5)
 
     # ── Skills ──
     skills = sections.get("skills")
