@@ -1,0 +1,59 @@
+C:\Users\Furkan\.conda\envs\cvmaker\Lib\site-packages\pytest_asyncio\plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-8.3.3, pluggy-1.6.0 -- C:\Users\Furkan\.conda\envs\cvmaker\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Furkan\Desktop\Kod\cvmaker
+plugins: anyio-4.13.0, asyncio-0.24.0
+asyncio: mode=Mode.STRICT, default_loop_scope=None
+collecting ... collected 31 items
+
+tests/test_agent.py::test_generate_cv_returns_sections_and_fallback_flag PASSED [  3%]
+tests/test_agent.py::test_generate_cv_uses_search_when_tool_called PASSED [  6%]
+tests/test_agent.py::test_merge_into_memory_returns_updated_dict_and_report PASSED [  9%]
+tests/test_agent.py::test_merge_into_memory_command_mode PASSED          [ 12%]
+tests/test_agent.py::test_chat_with_memory_returns_updated_history PASSED [ 16%]
+tests/test_agent.py::test_merge_into_memory_raises_on_missing_keys PASSED [ 19%]
+tests/test_agent.py::test_refine_cv_section_applies_instruction PASSED   [ 22%]
+tests/test_agent.py::test_refine_cv_section_raises_on_bad_json PASSED    [ 25%]
+tests/test_agent.py::test_refine_cv_section_raises_on_unexpected_keys PASSED [ 29%]
+tests/test_ingest.py::test_extract_text_from_txt PASSED                  [ 32%]
+tests/test_ingest.py::test_extract_text_from_txt_utf8_turkish PASSED     [ 35%]
+tests/test_ingest.py::test_extract_text_from_txt_cp1254_turkish PASSED   [ 38%]
+tests/test_ingest.py::test_extract_text_from_docx PASSED                 [ 41%]
+tests/test_ingest.py::test_extract_text_from_pdf PASSED                  [ 45%]
+tests/test_ingest.py::test_extract_text_unsupported_raises PASSED        [ 48%]
+tests/test_ingest.py::test_extract_text_legacy_doc_raises PASSED         [ 51%]
+tests/test_ingest.py::test_extract_text_empty_raises PASSED              [ 54%]
+tests/test_memory.py::test_load_memory_creates_file_if_missing PASSED    [ 58%]
+tests/test_memory.py::test_load_memory_returns_existing PASSED           [ 61%]
+tests/test_memory.py::test_save_memory PASSED                            [ 64%]
+tests/test_memory.py::test_memory_as_text_is_valid_json PASSED           [ 67%]
+tests/test_memory.py::test_load_memory_returns_defaults_on_corrupt_json PASSED [ 70%]
+tests/test_memory.py::test_backup_and_restore_memory PASSED              [ 74%]
+tests/test_memory.py::test_restore_raises_when_no_backup PASSED          [ 77%]
+tests/test_pdf.py::test_render_cv_pdf_returns_bytes PASSED               [ 80%]
+tests/test_pdf.py::test_render_cv_pdf_turkish PASSED                     [ 83%]
+tests/test_pdf.py::test_render_cv_html_editable_has_contenteditable_and_paths PASSED [ 87%]
+tests/test_pdf.py::test_render_cv_html_not_editable_has_no_contenteditable PASSED [ 90%]
+tests/test_search.py::test_search_web_returns_text_and_fallback_flag PASSED [ 93%]
+tests/test_search.py::test_search_web_fallback_when_no_tavily_key PASSED [ 96%]
+tests/test_search.py::test_search_tavily_falls_back_on_exception PASSED  [100%]
+
+============================== warnings summary ===============================
+tests/test_ingest.py::test_extract_text_from_pdf
+tests/test_ingest.py::test_extract_text_from_pdf
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_ingest.py::test_extract_text_from_pdf
+tests/test_ingest.py::test_extract_text_from_pdf
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_ingest.py::test_extract_text_from_pdf
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 31 passed, 5 warnings in 1.23s ========================
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

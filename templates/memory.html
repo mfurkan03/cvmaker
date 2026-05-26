@@ -39,6 +39,31 @@
   </section>
 
   <section>
+    <h2>Import from GitHub</h2>
+    <p class="hint" style="margin-bottom:0.75rem">Fetches all public repos and uses the AI to summarize each one as a project entry. Results appear in the editor below for review before saving.</p>
+    {% if github_token_set %}
+    <p class="hint" style="margin-bottom:0.75rem">Token: <span style="color:#16a34a;font-weight:600">✓ loaded from .env</span></p>
+    <form id="github-import-form">
+      <input type="text" id="github-username" placeholder="GitHub username (e.g. mfurkan03)" autocomplete="off">
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <select id="github-model" style="flex:1">
+          {% for m in models %}
+          <option value="{{ m.id }}"{% if m.id == default_model %} selected{% endif %}>{{ m.label }}</option>
+          {% endfor %}
+        </select>
+        <label style="font-size:0.85rem;font-weight:normal;display:flex;align-items:center;gap:0.3rem;color:#555">
+          <input type="checkbox" id="github-forks"> include forks
+        </label>
+        <button type="submit" id="github-import-btn">Import repos</button>
+      </div>
+    </form>
+    <div id="github-import-status" class="status hidden"></div>
+    {% else %}
+    <p class="hint" style="color:#c2410c">Add <code>GITHUB_TOKEN=your_token</code> to <code>.env</code> to enable this feature. Create a token at <strong>github.com/settings/tokens</strong> — no scopes needed.</p>
+    {% endif %}
+  </section>
+
+  <section>
     <h2>Current Memory</h2>
     <p class="hint" style="margin-bottom:0.75rem">Edit any field directly, then click Save.</p>
     <div id="memory-editor"></div>

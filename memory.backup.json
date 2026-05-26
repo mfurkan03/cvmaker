@@ -1,0 +1,334 @@
+{
+  "personal": {
+    "name": "MEHMET FURKAN ÇALIŞKAN",
+    "title": "",
+    "email": "mfcaliskan03@gmail.com",
+    "phone": "+90 531 337 8409",
+    "location": "Ankara, Turkey",
+    "linkedin": "https://www.linkedin.com/in/mehmet-furkan-caliskan/",
+    "github": "https://github.com/mfurkan03"
+  },
+  "summary": "Highly motivated and experienced Applied ML Engineer with a strong background in AI architectures, research, and applied engineering. Proficient in developing and optimizing vision models, agentic workflows, and production-ready tools.",
+  "education": [
+    {
+      "university": "Hacettepe Üniversitesi",
+      "department": "ARTIFICIAL INTELLIGENCE ENGINEERING",
+      "faculty": "ENGINEERING",
+      "cgpa": "3.29",
+      "thesis": "VisHybrid-X",
+      "startDate": "September 2021",
+      "endDate": "June 2026"
+    },
+    {
+      "university": "Kocaeli Science Highschool",
+      "department": "",
+      "faculty": "",
+      "cgpa": "92.39/100",
+      "thesis": "",
+      "startDate": "September 2017",
+      "endDate": "June 2021"
+    }
+  ],
+  "experience": [
+    {
+      "description": "Developing machine learning and deep learning models for early detection of neonatal sepsis.",
+      "company": "Ertunç Özcan Ş.T.İ",
+      "role": "ML Engineer",
+      "startDate": "February 2026",
+      "endDate": "Present"
+    },
+    {
+      "description": "Working on two projects: CONTVAR and DEEPScreen++. Using protein language models with contrastive learning to predict functional effects of single amino acid variants. Built an end-to-end DL pipeline using CNNs and SwinV2 Vision Transformers.",
+      "company": "Hacettepe University Biological Data Science Laboratory",
+      "role": "Undergrad Researcher",
+      "startDate": "February 2025",
+      "endDate": "Present"
+    },
+    {
+      "description": "Developed an agentic spreadsheet parser using GPT and LLAMAindex and integrated it into a workflow enabling full Q&A over spreadsheet files using RAG.",
+      "company": "Jotform",
+      "role": "Data Science Intern",
+      "startDate": "August 2025",
+      "endDate": "September 2025"
+    },
+    {
+      "description": "Worked on application development with React and FastAPI. Built an interactive natural language game using LangGraph and RAG within an agentic workflow.",
+      "company": "Goaltech",
+      "role": "AI Engineer Intern",
+      "startDate": "June 2025",
+      "endDate": "July 2025"
+    },
+    {
+      "description": "Designed and integrated databases using PL/SQL and Oracle Toad to manage enterprise information.",
+      "company": "Aktek Informatics",
+      "role": "HR Applications Intern",
+      "startDate": "August 2024",
+      "endDate": "November 2024"
+    }
+  ],
+  "projects": [
+    {
+      "name": "CONTVAR",
+      "description": "Using protein language models with contrastive learning to predict functional effects of single amino acid variants.",
+      "github": "",
+      "startDate": "",
+      "endDate": ""
+    },
+    {
+      "name": "DEEPScreen++",
+      "description": "Built an end-to-end DL pipeline using CNNs and SwinV2 Vision Transformers on 2D molecular images from SMILES for molecular property prediction.",
+      "github": "HUBioDataLab/DEEPScreen2",
+      "startDate": "",
+      "endDate": ""
+    },
+    {
+      "name": "Intelligent Spreadsheet Q&A with RAG",
+      "description": "Developed an agentic spreadsheet parser using GPT and LLAMAindex and integrated it into a workflow enabling full Q&A over spreadsheet files using RAG.",
+      "github": "mfurkan03/Intelligent-Spreadsheet-Q-A-with-RAG",
+      "startDate": "",
+      "endDate": ""
+    },
+    {
+      "name": "GM-ENGINE-Frpg-Creator",
+      "description": "Built an interactive natural language game using LangGraph and RAG within an agentic workflow.",
+      "github": "mfurkan03/GM-ENGINE-Frpg-Creator",
+      "startDate": "",
+      "endDate": ""
+    },
+    {
+      "name": "VisHybrid-X",
+      "description": "Developing a vision-only autonomous driving system using a hybrid approach combining Behavior Cloning and Reinforcement Learning (PPO) with Depth-Anything-V2 integration and curriculum learning.",
+      "organization": "Hacettepe University",
+      "start_date": "2025-11-01",
+      "end_date": "Present",
+      "github": "https://lnkd.in/d_YRwKav",
+      "startDate": "",
+      "endDate": ""
+    },
+    {
+      "name": "Intelligent Spreadsheet Q&A with RAG",
+      "description": "An advanced spreadsheet interpreter and question-answering system powered by Retrieval-Augmented Generation (RAG). It seamlessly handles both structured and unstructured spreadsheet data, enabling natural language interaction with your files.",
+      "organization": "",
+      "start_date": "2025-08-20",
+      "end_date": "Present",
+      "technologies": [
+        "Python",
+        "React",
+        "SQL",
+        "Conda",
+        "pip",
+        "npm"
+      ],
+      "github": "https://github.com/mfurkan03/Intelligent-Spreadsheet-Q-A-with-RAG",
+      "highlights": [
+        "Transforms spreadsheets into context-aware knowledge representations optimized for Q&A",
+        "Compatible with CSV, TSV, XLSX, and XLS files",
+        "Leverages SQL for structured (CSV/TSV) data while applying agentic parsing strategies for unstructured (XLS/XLSX) spreadsheets"
+      ]
+    },
+    {
+      "name": "Fantasy Role Playing Game Engine (FRPG)",
+      "description": "A LangGraph-powered fantasy RPG engine that builds an agentic world while utilizing tool-calling, retrieval-augmented generation (RAG), and dynamic summarization for efficient token usage. Players interact with evolving storylines, NPCs, inventory, and game logic through a language model acting as the game master.",
+      "organization": "",
+      "start_date": "2025-07-26",
+      "end_date": "Present",
+      "technologies": [
+        "Python",
+        "LangGraph",
+        "LangChain",
+        "ChatGroq",
+        "ChatOllama",
+        "Streamlit"
+      ],
+      "github": "https://github.com/mfurkan03/GM-ENGINE-Frpg-Creator",
+      "highlights": [
+        "Dynamic fantasy storyline built turn-by-turn",
+        "NPCs with Personality: Each NPC has stats, traits, and motivations",
+        "LLM-Powered GM: A language model acts as the game master"
+      ]
+    },
+    {
+      "name": "Perspective Correction using Edge and Line Fitting in Computer Vision",
+      "description": "This project implements a Hough Transform method for edge detection and uses RANSAC to improve results. It then applies geometric transitions to correct the frontal appearance of documents.",
+      "organization": "",
+      "start_date": "2025-03-13",
+      "end_date": "2025-03-22",
+      "technologies": [
+        "Python",
+        "Jupyter Notebook"
+      ],
+      "github": "https://github.com/mfurkan03/Computer-Vision--Perspective-Correction-using-Edge-and-Line-Fitting",
+      "highlights": []
+    },
+    {
+      "name": "Topological Sort and Shortest Path in Java",
+      "description": "This project implements a shortest path finding algorithm using Java for optimizing a train network in a city.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "2025-02-27",
+      "technologies": [
+        "Java"
+      ],
+      "github": "https://github.com/mfurkan03/Topological-Sort-and-Shortest-Path-in-Java",
+      "highlights": []
+    },
+    {
+      "name": "Dynamic Programming with Java",
+      "description": "This assignment implements Dynamic and Greedy solutions for a power related scenario in Java.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "2025-02-27",
+      "technologies": [
+        "Java"
+      ],
+      "github": "https://github.com/mfurkan03/Dynamic-Programming-with-Java",
+      "highlights": []
+    },
+    {
+      "name": "Network Package Simulation in C++",
+      "description": "This project simulates network packages and sends them in C++ using object-oriented programming. It is a fundamental implementation of network simulation.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "Present",
+      "technologies": [
+        "C++"
+      ],
+      "github": "https://github.com/mfurkan03/Network-Simulation-in-Cpp",
+      "highlights": []
+    },
+    {
+      "name": "Tetris Game in C++",
+      "description": "This project implements a tetris game in C++ with a scoreboard and gravity system, featuring all gameplay elements.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "Present",
+      "technologies": [
+        "C++"
+      ],
+      "github": "https://github.com/mfurkan03/Tetris-in-Cpp",
+      "highlights": []
+    },
+    {
+      "name": "Data Processing and Classifiers",
+      "description": "This project involves data preprocessing, analysis, and visualization using the Breast Cancer Wisconsin (Diagnostic) Dataset from Kaggle. It also includes attempts to predict breast cancers using KNN and Logistic Regression, as part of an assignment for AIN 214.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "2025-02-27",
+      "technologies": [
+        "Python",
+        "Jupyter Notebook"
+      ],
+      "github": "https://github.com/mfurkan03/Data-Processing-and-Classifiers.",
+      "highlights": []
+    },
+    {
+      "name": "Data Analysis and Relational Database with SQLite",
+      "description": "This project works on Flights and Hotel Bookings dataset and Titanic dataset from kaggle. I worked on relational databases using Sq3lite and made data analysis with visualization.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "2023-11-15",
+      "technologies": [
+        "Jupyter Notebook",
+        "SQLite"
+      ],
+      "github": "https://github.com/mfurkan03/Data-Analysis-and-Relational-Database-with-SQ3lite",
+      "highlights": []
+    },
+    {
+      "name": "Machine Learning Estimating Market Values for Soccer Players",
+      "description": "This project uses machine learning algorithms to estimate market values for soccer players worldwide. Data is obtained from scraping Transfermarkt and Kaggle. The project was done with Arda Acikgoz.",
+      "organization": "",
+      "start_date": "2025-02-27",
+      "end_date": "2023-09-25",
+      "technologies": [
+        "Python",
+        "Jupyter Notebook"
+      ],
+      "github": "https://github.com/mfurkan03/Machine-Learning-Estimating-Market-Values-For-Soccer-Players",
+      "highlights": []
+    },
+    {
+      "name": "No Surrender Case Study Unity Game",
+      "description": "A Unity game developed for the No Surrender Case Study project.",
+      "organization": "",
+      "start_date": "2023-07-14",
+      "end_date": "Present",
+      "technologies": [
+        "ShaderLab"
+      ],
+      "github": "https://github.com/mfurkan03/No-Surrender-Case-Study-Unity-Game",
+      "highlights": []
+    },
+    {
+      "name": "RAG-Enhanced Quantum Theory Informer",
+      "description": "This project augments a Large Language Model (LLM) with a Retrieval-Augmented Generator (RAG) system to provide users with information about quantum theory. A vector database is created using approximately 120 articles covering various subtopics of quantum theory. The project is designed to work on Google Colab.",
+      "organization": "",
+      "start_date": "2022-05",
+      "end_date": "Present",
+      "technologies": [
+        "Python",
+        "Jupyter Notebook",
+        "RAG",
+        "LLM"
+      ],
+      "github": "https://github.com/mfurkan03/RAG_Quantum_Theory",
+      "highlights": []
+    }
+  ],
+  "skills": {
+    "technical": [
+      "Programming",
+      "Data Science",
+      "Machine Learning",
+      "Artificial Intelligence",
+      "Computer Vision",
+      "Data Mining",
+      "Statistics",
+      "RNNs",
+      "CNNs",
+      "Object Detection",
+      "YOLO",
+      "LangGraph",
+      "RAG",
+      "Contrastive Learning",
+      "Vision Transformers",
+      "SwinV2",
+      "C++",
+      "Java",
+      "Lua",
+      "SQL",
+      "Python",
+      "PyTorch",
+      "NLP",
+      "Agentic AI",
+      "DepthAnything V2",
+      "GPT",
+      "LLAMAindex",
+      "React",
+      "FastAPI",
+      "Behavior Cloning",
+      "Reinforcement Learning",
+      "PPO"
+    ],
+    "soft": [
+      "Leadership",
+      "Teamwork",
+      "Problem Solving",
+      "Organization"
+    ],
+    "languages": [
+      "English (C1 - IELTS 8)",
+      "Turkish (C2 Native)",
+      "Japanese (A1)"
+    ]
+  },
+  "certifications": [
+    "Coursera — Sequence Models",
+    "Udemy — LLMs Mastery: Complete Guide to Transformers & Generative AI",
+    "Coursera — Generative AI, from GANs to CLIP, with Python and Pytorch",
+    "Udemy — Deep Learning A-Z 2025: Neural Networks, AI",
+    "Oracle — Java SE 8 Programmer I"
+  ],
+  "awards": [],
+  "notes": ""
+}
