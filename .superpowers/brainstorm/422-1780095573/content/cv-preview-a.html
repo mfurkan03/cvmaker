@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CV Önizleme — Modern Professional</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #e8e8e8; margin: 0; padding: 24px; }
+  h2 { text-align: center; font-size: 1rem; color: #555; margin-bottom: 16px; font-weight: 400; }
+  .paper {
+    max-width: 680px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 56px 64px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    color: #111;
+    line-height: 1.5;
+  }
+  /* Header */
+  .cv-name { text-align: center; font-size: 22pt; font-weight: bold; letter-spacing: 2px; color: #1e3a5f; margin-bottom: 4px; }
+  .cv-title { text-align: center; font-size: 10.5pt; font-style: italic; color: #555; margin-bottom: 4px; }
+  .cv-contact { text-align: center; font-size: 9pt; color: #555; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 2px solid #1e3a5f; }
+  /* Section heading */
+  .cv-section-heading {
+    font-size: 10pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1.8px;
+    color: #1e3a5f;
+    border-left: 3.5px solid #1e3a5f;
+    padding-left: 7px;
+    margin-top: 14px; margin-bottom: 6px;
+  }
+  /* Entry */
+  .cv-entry { margin-bottom: 10px; }
+  .cv-entry-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; line-height: 1.4; }
+  .cv-entry-org { font-weight: bold; font-size: 10.5pt; color: #111; }
+  .cv-entry-title { font-style: italic; font-size: 10pt; color: #333; }
+  .cv-entry-date { font-size: 9pt; color: #666; white-space: nowrap; }
+  .cv-entry-loc { font-size: 9pt; color: #777; white-space: nowrap; }
+  .cv-entry-tech { font-size: 9pt; color: #444; margin-top: 1px; }
+  /* Bullets */
+  .cv-bullets { margin-top: 4px; padding-left: 0; list-style: none; font-size: 10pt; line-height: 1.5; }
+  .cv-bullets li { margin-bottom: 2px; padding-left: 1.1em; position: relative; }
+  .cv-bullets li::before { content: "▸"; position: absolute; left: 0; color: #1e3a5f; font-size: 9pt; }
+  /* Skills */
+  .cv-skills-table { width: 100%; font-size: 10pt; border-collapse: collapse; }
+  .cv-skills-table td { padding: 2px 0; vertical-align: top; }
+  .cv-skills-cat { font-weight: bold; color: #1e3a5f; white-space: nowrap; padding-right: 10px; width: 1%; }
+</style>
+</head>
+<body>
+<h2>Yeni stil — gerçek CV önizlemesi · <a href="http://localhost:8000" style="color:#1e3a5f">localhost:8000</a> adresinden CV üretip görebilirsin</h2>
+
+<div class="paper">
+  <div class="cv-name">MEHMET FURKAN ÇALIŞKAN</div>
+  <div class="cv-title">Software Engineer · İstanbul, Türkiye</div>
+  <div class="cv-contact">mfcaliskan@gmail.com &nbsp;|&nbsp; +90 555 123 45 67 &nbsp;|&nbsp; linkedin.com/in/mfc &nbsp;|&nbsp; github.com/mfurkan03</div>
+
+  <div class="cv-section-heading">Summary</div>
+  <p style="font-size:10pt;line-height:1.55;color:#222;">
+    Backend-focused software engineer with 2+ years of experience building scalable APIs and data pipelines. Passionate about clean architecture, developer tooling, and open-source contributions.
+  </p>
+
+  <div class="cv-section-heading">Experience</div>
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">Acme Corporation</span>
+      <span class="cv-entry-date">Jun 2023 – Present</span>
+    </div>
+    <div class="cv-entry-row">
+      <span class="cv-entry-title">Backend Engineer</span>
+      <span class="cv-entry-loc">İstanbul, TR</span>
+    </div>
+    <ul class="cv-bullets">
+      <li>Reduced API response time by 40% by introducing Redis-based caching across 6 endpoints</li>
+      <li>Led migration of 3 legacy REST services to FastAPI, cutting deployment time from 45 to 12 minutes</li>
+      <li>Designed event-driven notification system using Celery + RabbitMQ serving 50k daily users</li>
+    </ul>
+  </div>
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">Startup XYZ</span>
+      <span class="cv-entry-date">Sep 2022 – May 2023</span>
+    </div>
+    <div class="cv-entry-row">
+      <span class="cv-entry-title">Software Engineer Intern</span>
+      <span class="cv-entry-loc">Uzaktan</span>
+    </div>
+    <ul class="cv-bullets">
+      <li>Built data ingestion pipeline processing 200k records/day with Python and PostgreSQL</li>
+      <li>Wrote end-to-end test suite covering 85% of the core API surface</li>
+    </ul>
+  </div>
+
+  <div class="cv-section-heading">Education</div>
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">Boğaziçi Üniversitesi</span>
+      <span class="cv-entry-date">2019 – 2024</span>
+    </div>
+    <div class="cv-entry-row">
+      <span class="cv-entry-title">B.Sc. Computer Engineering</span>
+      <span class="cv-entry-loc">İstanbul, TR</span>
+    </div>
+    <ul class="cv-bullets">
+      <li>GPA: 3.51 / 4.00 · Dean's List (2021, 2022)</li>
+    </ul>
+  </div>
+
+  <div class="cv-section-heading">Projects</div>
+  <div class="cv-entry">
+    <div class="cv-entry-row">
+      <span class="cv-entry-org">CV Maker</span>
+      <span class="cv-entry-date">2024</span>
+    </div>
+    <div class="cv-entry-tech">Python · FastAPI · Groq LLM · WeasyPrint</div>
+    <ul class="cv-bullets">
+      <li>AI-powered Harvard-style CV generator with memory-backed agent and web search</li>
+    </ul>
+  </div>
+
+  <div class="cv-section-heading">Skills</div>
+  <table class="cv-skills-table">
+    <tr><td class="cv-skills-cat">Languages:</td><td>Python, TypeScript, Go, SQL</td></tr>
+    <tr><td class="cv-skills-cat">Frameworks:</td><td>FastAPI, Django, React, Next.js</td></tr>
+    <tr><td class="cv-skills-cat">Tools:</td><td>Docker, Kubernetes, PostgreSQL, Redis, GitHub Actions</td></tr>
+  </table>
+</div>
+</body>
+</html>

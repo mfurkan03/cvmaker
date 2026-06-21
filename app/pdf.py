@@ -13,12 +13,13 @@ _ARIAL_REGULAR = Path(r"C:\Windows\Fonts\arial.ttf")
 _ARIAL_BOLD = Path(r"C:\Windows\Fonts\arialbd.ttf")
 
 
-def _render_html(sections: dict, language: str, editable: bool = False, css_path: str | None = None) -> str:
+def _render_html(sections: dict, language: str, editable: bool = False, css_path: str | None = None, inline_css: str | None = None) -> str:
     template = _env.get_template("cv_harvard.html")
     return template.render(
         sections=sections,
         language=language,
         css_path=css_path or _CSS_PATH.as_uri(),
+        inline_css=inline_css,
         editable=editable,
     )
 
@@ -28,7 +29,18 @@ def render_cv_html(sections: dict, language: str, editable: bool = False) -> str
     return _render_html(sections, language, editable=editable, css_path="/static/css/cv.css")
 
 
+_MSYS2_GTK_DIRS = [
+    r"C:\msys64\ucrt64\bin",
+    r"C:\msys64\mingw64\bin",
+    r"C:\msys64\clang64\bin",
+]
+
+
 def _render_via_weasyprint(html_content: str) -> bytes:
+    import os  # noqa: PLC0415
+    for d in _MSYS2_GTK_DIRS:
+        if os.path.isdir(d):
+            os.add_dll_directory(d)
     from weasyprint import HTML  # noqa: PLC0415
     return HTML(string=html_content, base_url=str(_BASE)).write_pdf()
 
@@ -70,60 +82,97 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
         return t
 
     W = pdf.epw  # effective page width
+    ACCENT = (30, 58, 95)   # #1e3a5f
+    BLACK  = (0, 0, 0)
+    GRAY   = (85, 85, 85)   # dates / locations
+    BULLET = "▸ "      # ▸
+
+    def accent_color():
+        pdf.set_text_color(*ACCENT)
+
+    def black_color():
+        pdf.set_text_color(*BLACK)
+
+    def gray_color():
+        pdf.set_text_color(*GRAY)
 
     def section_heading(title: str):
-        pdf.ln(12)
-        pdf.set_font(font, "B", 11)
-        pdf.cell(W, 13, s(title.upper()), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(10)
         y = pdf.get_y()
-        pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
-        pdf.ln(4)
+        # left accent bar (3.5pt wide, 13pt tall)
+        pdf.set_fill_color(*ACCENT)
+        pdf.rect(pdf.l_margin, y, 3.5, 13, style="F")
+        pdf.set_x(pdf.l_margin + 7)
+        accent_color()
+        pdf.set_font(font, "B", 10)
+        pdf.cell(W - 7, 13, s(title.upper()), new_x="LMARGIN", new_y="NEXT")
+        black_color()
+        pdf.set_fill_color(0, 0, 0)
+        pdf.ln(3)
 
     def entry_row(left: str, right: str, left_style="B", right_style="", size=10.5):
         lw = W * 0.72
         rw = W * 0.28
+        black_color()
         pdf.set_font(font, left_style, size)
         pdf.cell(lw, 12, s(left), new_x="RIGHT", new_y="LAST")
-        pdf.set_font(font, right_style, 9.5)
+        gray_color()
+        pdf.set_font(font, right_style, 9)
         pdf.cell(rw, 12, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
+        black_color()
 
     def entry_sub_row(left: str, right: str, size=10.5):
         lw = W * 0.72
         rw = W * 0.28
+        pdf.set_text_color(51, 51, 51)
         pdf.set_font(font, "I", size)
         pdf.cell(lw, 12, s(left), new_x="RIGHT", new_y="LAST")
-        pdf.set_font(font, "", 9.5)
+        gray_color()
+        pdf.set_font(font, "", 9)
         pdf.cell(rw, 12, s(right), align="R", new_x="LMARGIN", new_y="NEXT")
+        black_color()
 
     def bullets(items: list):
-        pdf.set_font(font, "", 10.5)
+        pdf.set_font(font, "", 10)
         for item in items:
             text = s(item)
             if not text:
                 continue
-            # hanging indent: bullet at x, text indented
             pdf.set_x(pdf.l_margin + 10)
-            pdf.cell(8, 12, "•", new_x="RIGHT", new_y="LAST")
-            pdf.multi_cell(W - 18, 12, text, new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(4)
+            accent_color()
+            pdf.cell(10, 12, BULLET, new_x="RIGHT", new_y="LAST")
+            black_color()
+            pdf.multi_cell(W - 20, 12, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
 
     def flat_list(items: list):
-        pdf.set_font(font, "", 10.5)
+        pdf.set_font(font, "", 10)
         for item in items:
             text = s(item)
             if not text:
                 continue
             pdf.set_x(pdf.l_margin + 10)
-            pdf.cell(8, 12, "•", new_x="RIGHT", new_y="LAST")
-            pdf.multi_cell(W - 18, 12, text, new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(4)
+            accent_color()
+            pdf.cell(10, 12, BULLET, new_x="RIGHT", new_y="LAST")
+            black_color()
+            pdf.multi_cell(W - 20, 12, text, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
 
     # ── Personal header ──
     personal = sections.get("personal", {})
     name = personal.get("name", "")
     if name:
+        accent_color()
         pdf.set_font(font, "B", 22)
-        pdf.cell(W, 24, s(name), align="C", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(W, 26, s(name), align="C", new_x="LMARGIN", new_y="NEXT")
+        black_color()
+
+    title = personal.get("title", "")
+    if title:
+        gray_color()
+        pdf.set_font(font, "I", 10.5)
+        pdf.cell(W, 13, s(title), align="C", new_x="LMARGIN", new_y="NEXT")
+        black_color()
 
     contact_parts = [
         personal.get("email", ""), personal.get("phone", ""),
@@ -131,20 +180,20 @@ def _render_via_fpdf2(sections: dict, language: str) -> bytes:  # noqa: C901
         personal.get("github", ""),
     ]
     contact_parts = [p for p in contact_parts if p]
-    title = personal.get("title", "")
-    if title:
-        pdf.set_font(font, "I", 11)
-        pdf.cell(W, 13, s(title), align="C", new_x="LMARGIN", new_y="NEXT")
-
     if contact_parts:
-        pdf.set_font(font, "", 9.5)
+        gray_color()
+        pdf.set_font(font, "", 9)
         pdf.multi_cell(W, 13, s("  |  ".join(contact_parts)), align="C", new_x="LMARGIN", new_y="NEXT")
+        black_color()
 
     if name or contact_parts:
-        # thin rule closing the header block
         pdf.ln(3)
         y = pdf.get_y()
+        pdf.set_draw_color(*ACCENT)
+        pdf.set_line_width(1.5)
         pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
+        pdf.set_draw_color(0, 0, 0)
+        pdf.set_line_width(0.2)
         pdf.ln(4)
 
     # ── Summary ──
@@ -266,7 +315,8 @@ def render_cv_pdf(sections: dict, language: str) -> bytes:
     if GTK/Pango libraries required by WeasyPrint are not available
     (common on Windows without the GTK runtime).
     """
-    html_content = _render_html(sections, language, editable=False)
+    css_text = _CSS_PATH.read_text(encoding="utf-8")
+    html_content = _render_html(sections, language, editable=False, inline_css=css_text)
     try:
         return _render_via_weasyprint(html_content)
     except OSError as exc:

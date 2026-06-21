@@ -49,6 +49,30 @@ def _extract_json(content: str) -> dict:
     raise ValueError(f"Could not extract valid JSON from model output. First 300 chars: {content[:300]}")
 
 
+def _bullet_to_str(b) -> str:
+    """Coerce a bullet to a plain string — guards against model outputting dicts."""
+    if isinstance(b, str):
+        return b
+    if isinstance(b, dict):
+        # Try common keys the model might use for the sentence
+        for key in ("description", "text", "bullet", "content", "achievement", "sentence"):
+            if b.get(key):
+                return str(b[key])
+        # Fallback: join all string values
+        parts = [str(v) for v in b.values() if v and isinstance(v, str)]
+        return " ".join(parts) if parts else str(b)
+    return str(b)
+
+
+def _fix_cv_sections(sections: dict) -> dict:
+    """Coerce any dict bullets to plain strings across all section lists."""
+    for section in ("education", "experience", "projects"):
+        for entry in sections.get(section, []):
+            if isinstance(entry, dict) and isinstance(entry.get("bullets"), list):
+                entry["bullets"] = [_bullet_to_str(b) for b in entry["bullets"] if b]
+    return sections
+
+
 def _call(model: str, **kwargs):
     """Wrapper around chat.completions.create that caches rate-limit headers."""
     global _quota_cache
@@ -91,15 +115,39 @@ _TOOLS = [
     }
 ]
 
-_GENERATE_SYSTEM = """You are a professional CV writer. Create tailored, Harvard-style, ATS-compatible CVs.
+_GENERATE_SYSTEM = """You are an expert CV writer. Create tailored, Harvard-style, ATS-compatible CVs.
 
-Rules:
-- Present the candidate accurately and compellingly. Do NOT exaggerate, inflate titles, or fabricate achievements.
-- Harvard structure by default: Education → Experience → Projects → Skills. Reorder when the target calls for it (e.g. Publications first for academic CVs).
-- If the target is a named institution/program/company and no requirements are given, use search_web to find what is actually required before writing.
-- ATS: action verbs, quantified achievements where available. Do not fabricate numbers or titles, but do use strong, specific language that reflects the candidate's actual work.
-- **Emphasis**: Lean into the candidate's strongest and most relevant experiences. Lead bullets with the most impressive result, not a procedural description. If an achievement is genuinely notable (e.g. shipped to millions of users, first-author publication, measurable performance gain), make it stand out — but only if it actually happened. A subtle boost in framing ("Led development of X" vs "Helped with X") is fine when accurate; fabrication is not.
-- **Cross-reference awareness**: Before writing, mentally join all memory sections. If a project in "projects" was done at a company in "experience" (matching org, overlapping dates, or explicit note), surface it as a bullet under that experience entry rather than (or in addition to) a standalone project entry. Conversely, if a project has no workplace link, keep it in Projects. Never treat sections as isolated silos — the CV should read as a coherent narrative of one person's career.
+## Core principles
+- **Accuracy first**: Present the candidate truthfully. Never fabricate numbers, titles, or achievements. A subtle framing upgrade ("Led" vs "Helped with") is fine when accurate; fabrication is not.
+- **Harvard structure** by default: Education → Experience → Projects → Skills. Reorder when the target demands it (e.g. Publications first for academic CVs; Experience first for experienced professionals).
+- **Research first**: If the target is a named institution/program/company and no requirements are provided, use search_web to find what skills and keywords are actually valued before writing.
+- **Cross-reference awareness**: Mentally join all memory sections. If a project in "projects" was done at a company in "experience" (matching org, overlapping dates), surface it as a bullet under that experience entry too. Never treat sections as isolated silos.
+
+## Bullet writing rules (follow exactly)
+- **Bullets are plain strings**: Every bullet MUST be a plain string in the JSON array — never an object or dict. Example: `"bullets": ["Built X by doing Y, resulting in Z."]` ✓ — NEVER `"bullets": [{"action": "Built", "description": "..."}]` ✗
+- **XYZ formula**: Apply this formula in your head, then write the result as a single plain string sentence: "Accomplished [X] as measured by [Y] by doing [Z]."
+- **Action verbs**: Every bullet MUST start with a strong past-tense action verb. Preferred tiers:
+  - Impact: Spearheaded, Pioneered, Transformed, Overhauled, Championed
+  - Delivery: Developed, Implemented, Launched, Engineered, Designed, Established
+  - Improvement: Reduced, Increased, Streamlined, Optimized, Accelerated
+  - Management: Led, Directed, Coordinated
+- **NEVER use**: "Responsible for", "Helped with", "Worked on", "Assisted in", "Duties included"
+- **Quantify**: At least 60% of bullets must include a metric (%, $, time saved, scale, team size). If exact numbers are unknown, use ranges ("~20%") or scope ("across 3 teams"). Never fabricate numbers.
+- **Front-load**: Put the most impressive, keyword-rich bullets first per role — recruiters skim only the top 3.
+- **Length**: 1–2 lines per bullet, 20–25 words max. Tight and specific beats long and vague.
+- **Bullet count per role**: Most recent/relevant role: 4–6 bullets. Prior roles: 2–4 bullets. Roles older than 10 years: 1–2 bullets or omit.
+
+## Summary rules
+- 3–4 sentences. Formula: [Title] with [X years] experience in [domains]. Proven track record of [top achievement with metric]. Expertise in [3–4 skills matching target].
+- No pronouns (no "I", "my", "me"). Start sentences with role nouns or action verbs.
+- Embed the top 3 keywords from the job/program description naturally.
+- **Banned phrases**: "hardworking", "results-oriented", "go-getter", "team player", "dynamic", "motivated", "passionate", "detail-oriented", "synergy". Replace with concrete evidence.
+
+## ATS rules
+- Section headings must be standard: "Work Experience", "Education", "Skills", "Projects", "Certifications". Not creative variants.
+- Include both acronym and spelled-out form: "Machine Learning (ML)", "Search Engine Optimization (SEO)".
+- Skills section: hard/verifiable skills only. No soft skills ("communication", "leadership") in the skills table — those belong as demonstrated outcomes in bullets.
+- Mirror exact phrasing from the job description when embedding keywords.
 
 Output ONLY a valid JSON object with this exact schema — no markdown fences, no extra keys:
 
@@ -275,10 +323,13 @@ Experience:
 - Output raw JSON only — no markdown fences, no explanation."""
 
 _STEP_ALIGN = (
-    "Align this CV to the target role: {target}. "
-    "Strengthen bullet points to lead with the most relevant skills and keywords the role demands. "
-    "Update the summary to speak directly to this specific position. "
-    "Reorder sections if appropriate (e.g. Education before Experience for academic targets). "
+    "Align this CV precisely to the target: {target}. "
+    "Rules: "
+    "(1) Extract the top 8-10 keywords/skills from the target description and ensure they appear naturally in Summary, Experience bullets, AND Skills — not just one section. "
+    "(2) Mirror the priority order of the job posting: the skills/responsibilities listed first by the employer should appear first in your bullets. "
+    "(3) Rewrite the Summary to speak directly to this role — embed the top 3 target keywords, remove anything irrelevant. No clichés. "
+    "(4) Reorder CV sections if the target demands it (e.g. Education before Experience for fresh graduates or academic targets; Experience first for industry roles). "
+    "(5) Include both the acronym and spelled-out form for technical terms (e.g. 'Machine Learning (ML)'). "
     "Do not invent or fabricate anything not already in the candidate's background."
 )
 
@@ -291,14 +342,16 @@ _STEP_PROJECTS = (
 )
 
 _STEP_POLISH = (
-    "Polish this CV for download: "
-    "(1) Tighten any verbose bullet to 1-2 lines maximum. "
-    "(2) Ensure every bullet starts with a strong past-tense action verb "
-    "(e.g. Built, Led, Designed, Implemented). "
-    "(3) Remove filler phrases like 'Responsible for' or 'Helped with'. "
-    "(4) Fix any inconsistent tense — past tense for completed roles, present for current. "
-    "(5) Ensure a professional tone throughout. "
-    "Do not add or remove sections, and do not change any facts."
+    "Final polish pass — apply every rule below without changing any facts or adding/removing sections: "
+    "(1) Every bullet must start with a strong action verb — upgrade weak openers: "
+    "'Responsible for X' → 'Led X', 'Worked on X' → 'Developed X', 'Helped with X' → 'Contributed to X by [specific action]'. "
+    "(2) Tighten verbose bullets to 1–2 lines, 20–25 words max. Cut filler words. "
+    "(3) Quantify: if a bullet describes an achievement with no metric, add a plausible scope metric (e.g. team size, project scale, time frame) — only if it can be inferred from existing data; never fabricate numbers. "
+    "(4) Front-load: within each role, reorder bullets so the most impressive/relevant one is first. "
+    "(5) Tense consistency: past tense for all completed roles, present tense for current role bullets. "
+    "(6) Eliminate cliché adjectives: 'passionate', 'motivated', 'hardworking', 'detail-oriented', 'dynamic'. Replace with concrete evidence or delete. "
+    "(7) Skills section: remove any soft skills ('communication', 'teamwork', 'problem-solving') — these belong in bullets, not the skills table. "
+    "(8) Summary: must be 3–4 sentences, no personal pronouns. If it contains clichés, rewrite the offending sentence with a concrete achievement instead."
 )
 
 
@@ -332,7 +385,7 @@ def refine_cv_section(sections: dict, instruction: str, model: str) -> dict:
     if not isinstance(updated, dict):
         raise ValueError(f"Refine returned non-dict JSON: {type(updated).__name__}.")
     # Merge: start from original to preserve any keys the model dropped, then overlay model output.
-    return {**sections, **updated}
+    return _fix_cv_sections({**sections, **updated})
 
 
 def generate_cv_pipeline(
@@ -413,7 +466,7 @@ def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, b
             )
             retry_content = retry_resp.choices[0].message.content or ""
             try:
-                return _extract_json(retry_content), used_fallback
+                return _fix_cv_sections(_extract_json(retry_content)), used_fallback
             except ValueError as ve:
                 raise ValueError(f"Agent returned invalid JSON: {ve}") from ve
 
@@ -451,7 +504,7 @@ def generate_cv(target: str, language: str, model: str = MODEL) -> tuple[dict, b
                 )
         else:
             try:
-                return _extract_json(msg.content), used_fallback
+                return _fix_cv_sections(_extract_json(msg.content)), used_fallback
             except ValueError as exc:
                 raise ValueError(f"Agent returned invalid JSON: {exc}") from exc
 

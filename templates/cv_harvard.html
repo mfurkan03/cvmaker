@@ -2,7 +2,11 @@
 <html lang="{{ 'tr' if language == 'Turkish' else 'en' }}">
 <head>
   <meta charset="UTF-8">
+  {% if inline_css %}
+  <style>{{ inline_css }}</style>
+  {% else %}
   <link rel="stylesheet" href="{{ css_path }}">
+  {% endif %}
 </head>
 <body>
 <div class="cv-page">

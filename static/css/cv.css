@@ -8,9 +8,9 @@
 body {
   font-family: Georgia, "Times New Roman", Times, serif;
   font-size: 10.5pt;
-  color: #000;
+  color: #111;
   background: #fff;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .cv-page {
@@ -22,52 +22,55 @@ body {
   text-align: center;
   font-size: 22pt;
   font-weight: bold;
-  letter-spacing: 0.5px;
+  letter-spacing: 2px;
+  color: #1e3a5f;
   margin-bottom: 4px;
 }
 
 .cv-title {
   text-align: center;
-  font-size: 11pt;
+  font-size: 10.5pt;
   font-style: italic;
-  color: #333;
-  margin-bottom: 3px;
+  color: #555;
+  margin-bottom: 4px;
 }
 
 .cv-contact {
   text-align: center;
-  font-size: 9.5pt;
-  color: #222;
+  font-size: 9pt;
+  color: #555;
   padding-bottom: 10px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #000;
+  margin-bottom: 6px;
+  border-bottom: 2px solid #1e3a5f;
 }
 
-.cv-contact a { color: #000; text-decoration: none; }
+.cv-contact a { color: #1e3a5f; text-decoration: none; }
 
 /* ── Section heading ── */
 .cv-section-heading {
-  font-size: 11pt;
+  font-size: 10pt;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  border-bottom: 2px solid #000;
-  padding-bottom: 2px;
-  margin-top: 16px;
+  letter-spacing: 1.8px;
+  color: #1e3a5f;
+  border-left: 3.5px solid #1e3a5f;
+  padding-left: 7px;
+  margin-top: 14px;
   margin-bottom: 6px;
   break-after: avoid;
 }
 
 /* ── Summary ── */
 .cv-summary {
-  font-size: 10.5pt;
-  line-height: 1.45;
+  font-size: 10pt;
+  line-height: 1.55;
+  color: #222;
   margin-bottom: 4px;
 }
 
 /* ── Entry ── */
 .cv-entry {
-  margin-bottom: 8px;
+  margin-bottom: 9px;
   break-inside: avoid;
 }
 
@@ -76,89 +79,112 @@ body {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .cv-entry-org {
   font-weight: bold;
   font-size: 10.5pt;
+  color: #111;
 }
 
 .cv-entry-title {
   font-style: italic;
-  font-size: 10.5pt;
+  font-size: 10pt;
+  color: #333;
 }
 
 .cv-entry-date {
-  font-size: 9.5pt;
+  font-size: 9pt;
+  color: #666;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .cv-entry-loc {
-  font-size: 9.5pt;
-  color: #333;
+  font-size: 9pt;
+  color: #777;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .cv-entry-tech {
-  font-size: 9.5pt;
-  color: #333;
+  font-size: 9pt;
+  color: #444;
   margin-top: 1px;
 }
 
 .cv-entry-url {
-  font-size: 9.5pt;
-  color: #333;
+  font-size: 9pt;
+  color: #1e3a5f;
 }
 
 /* ── Bullets ── */
 .cv-bullets {
-  margin-top: 3px;
-  margin-left: 1.1em;
-  font-size: 10.5pt;
-  line-height: 1.35;
+  margin-top: 4px;
+  margin-left: 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 10pt;
+  line-height: 1.5;
 }
 
 .cv-bullets li {
   margin-bottom: 2px;
+  padding-left: 1.1em;
+  text-indent: -1.1em;
+}
+
+.cv-bullets li::before {
+  content: "▸ ";
+  color: #1e3a5f;
+  font-size: 9pt;
 }
 
 /* ── Skills ── */
 .cv-skills-table {
   width: 100%;
-  font-size: 10.5pt;
+  font-size: 10pt;
   border-collapse: collapse;
 }
 
 .cv-skills-table td {
-  padding: 1px 0;
+  padding: 2px 0;
   vertical-align: top;
 }
 
 .cv-skills-cat {
   font-weight: bold;
+  color: #1e3a5f;
   white-space: nowrap;
-  padding-right: 8px;
+  padding-right: 10px;
   width: 1%;
 }
 
 /* ── Flat list (certifications, awards, publications) ── */
 .cv-flat-list {
-  font-size: 10.5pt;
-  line-height: 1.4;
+  font-size: 10pt;
+  line-height: 1.5;
   list-style: none;
   padding: 0;
 }
 
+.cv-flat-list li {
+  padding-left: 1.1em;
+  text-indent: -1.1em;
+  margin-bottom: 2px;
+}
+
 .cv-flat-list li::before {
-  content: "• ";
+  content: "▸ ";
+  color: #1e3a5f;
+  font-size: 9pt;
 }
 
 /* ── Research interests / plain text ── */
 .cv-plain {
-  font-size: 10.5pt;
-  line-height: 1.4;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: #222;
   white-space: pre-wrap;
 }

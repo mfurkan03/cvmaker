@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CV Stil Seçenekleri</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f0f0; margin: 0; padding: 24px; }
+  h1 { text-align: center; font-size: 1.3rem; color: #222; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 28px; }
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    width: 320px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+  }
+  .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.16); }
+  .card.selected { border-color: #2563eb; }
+  .card-label {
+    padding: 10px 16px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-label .badge {
+    background: #1e3a5f;
+    color: #fff;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 0.7rem;
+  }
+  .card-label .badge.rec { background: #16a34a; }
+  .cv-mock { padding: 18px 20px; font-family: Georgia, serif; }
+
+  /* ── Style A: Modern Professional ── */
+  .styleA .cv-name { font-size: 1.25rem; font-weight: bold; letter-spacing: 1px; color: #1e3a5f; margin-bottom: 2px; }
+  .styleA .cv-title { font-size: 0.78rem; color: #555; font-style: italic; margin-bottom: 5px; }
+  .styleA .cv-contact { font-size: 0.7rem; color: #666; border-bottom: 2px solid #1e3a5f; padding-bottom: 8px; margin-bottom: 10px; }
+  .styleA .cv-section {
+    font-size: 0.72rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #1e3a5f;
+    padding-left: 8px;
+    border-left: 3px solid #1e3a5f;
+    margin: 10px 0 5px;
+  }
+  .styleA .cv-org { font-weight: bold; font-size: 0.78rem; color: #111; }
+  .styleA .cv-role { font-style: italic; font-size: 0.73rem; color: #444; }
+  .styleA .cv-date { font-size: 0.68rem; color: #777; float: right; }
+  .styleA .cv-bullet { font-size: 0.7rem; color: #333; margin-left: 10px; line-height: 1.6; }
+  .styleA .cv-bullet::before { content: "▸ "; color: #1e3a5f; }
+
+  /* ── Style B: Minimal Elegant ── */
+  .styleB .cv-name { font-size: 1.3rem; font-weight: 300; letter-spacing: 3px; color: #111; margin-bottom: 1px; font-family: "Segoe UI", sans-serif; }
+  .styleB .cv-title { font-size: 0.72rem; color: #888; letter-spacing: 1px; margin-bottom: 5px; font-family: "Segoe UI", sans-serif; text-transform: uppercase; }
+  .styleB .cv-contact { font-size: 0.68rem; color: #999; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid #ddd; }
+  .styleB .cv-section {
+    font-size: 0.65rem; font-variant: small-caps; font-weight: bold; letter-spacing: 2px;
+    color: #555;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 10px 0 5px; padding-bottom: 2px;
+  }
+  .styleB .cv-org { font-weight: 600; font-size: 0.76rem; color: #111; font-family: "Segoe UI", sans-serif; }
+  .styleB .cv-role { font-size: 0.7rem; color: #777; }
+  .styleB .cv-date { font-size: 0.65rem; color: #aaa; float: right; }
+  .styleB .cv-bullet { font-size: 0.69rem; color: #444; margin-left: 10px; line-height: 1.65; }
+  .styleB .cv-bullet::before { content: "— "; color: #bbb; }
+
+  /* ── Style C: Classic Refined ── */
+  .styleC .cv-name { font-size: 1.3rem; font-weight: bold; letter-spacing: 2px; color: #000; margin-bottom: 2px; }
+  .styleC .cv-title { font-size: 0.76rem; color: #444; font-style: italic; margin-bottom: 5px; }
+  .styleC .cv-contact { font-size: 0.7rem; color: #333; border-bottom: 1.5px solid #000; padding-bottom: 7px; margin-bottom: 10px; }
+  .styleC .cv-section {
+    font-size: 0.73rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1.8px;
+    color: #000;
+    background: #f7f7f7;
+    padding: 2px 6px;
+    border-bottom: 1.5px solid #000;
+    margin: 10px 0 5px;
+  }
+  .styleC .cv-org { font-weight: bold; font-size: 0.78rem; color: #000; }
+  .styleC .cv-role { font-style: italic; font-size: 0.73rem; color: #333; }
+  .styleC .cv-date { font-size: 0.68rem; color: #555; float: right; }
+  .styleC .cv-bullet { font-size: 0.72rem; color: #222; margin-left: 12px; line-height: 1.55; }
+  .styleC .cv-bullet::before { content: "• "; }
+
+  .clearfix::after { content: ""; display: table; clear: both; }
+</style>
+</head>
+<body>
+
+<h1>CV Stil Seçenekleri</h1>
+<p class="subtitle">Hangisi sana daha yakın? Tıklayarak seç.</p>
+
+<div class="cards">
+
+  <!-- A: Modern Professional -->
+  <div class="card" data-choice="A" onclick="select(this)">
+    <div class="card-label">
+      <span class="badge">A</span> Modern Professional
+    </div>
+    <div class="cv-mock styleA">
+      <div class="cv-name">MEHMET FURKAN ÇALIŞKAN</div>
+      <div class="cv-title">Software Engineer · İstanbul, Türkiye</div>
+      <div class="cv-contact">mfcaliskan@gmail.com &nbsp;|&nbsp; linkedin.com/in/mfc &nbsp;|&nbsp; github.com/mfurkan03</div>
+      <div class="cv-section">Experience</div>
+      <div class="clearfix">
+        <span class="cv-org">Acme Corp</span>
+        <span class="cv-date">Jun 2023 – Present</span>
+      </div>
+      <div class="cv-role">Backend Engineer</div>
+      <div class="cv-bullet">Reduced API latency by 40% via Redis caching layer</div>
+      <div class="cv-bullet">Led migration of 3 microservices to FastAPI</div>
+      <div class="cv-section">Education</div>
+      <div class="clearfix">
+        <span class="cv-org">Boğaziçi Üniversitesi</span>
+        <span class="cv-date">2019 – 2024</span>
+      </div>
+      <div class="cv-role">B.Sc. Computer Engineering</div>
+    </div>
+  </div>
+
+  <!-- B: Minimal Elegant -->
+  <div class="card" data-choice="B" onclick="select(this)">
+    <div class="card-label">
+      <span class="badge" style="background:#6b7280;">B</span> Minimal Elegant
+    </div>
+    <div class="cv-mock styleB">
+      <div class="cv-name">Mehmet Furkan Çalışkan</div>
+      <div class="cv-title">Software Engineer</div>
+      <div class="cv-contact">mfcaliskan@gmail.com · linkedin.com/in/mfc · github.com/mfurkan03</div>
+      <div class="cv-section">Experience</div>
+      <div class="clearfix">
+        <span class="cv-org">Acme Corp</span>
+        <span class="cv-date">Jun 2023 – Present</span>
+      </div>
+      <div class="cv-role">Backend Engineer</div>
+      <div class="cv-bullet">Reduced API latency by 40% via Redis caching layer</div>
+      <div class="cv-bullet">Led migration of 3 microservices to FastAPI</div>
+      <div class="cv-section">Education</div>
+      <div class="clearfix">
+        <span class="cv-org">Boğaziçi Üniversitesi</span>
+        <span class="cv-date">2019 – 2024</span>
+      </div>
+      <div class="cv-role">B.Sc. Computer Engineering</div>
+    </div>
+  </div>
+
+  <!-- C: Classic Refined -->
+  <div class="card" data-choice="C" onclick="select(this)">
+    <div class="card-label">
+      <span class="badge rec">C</span> Classic Refined <span style="font-size:0.65rem;color:#16a34a;">(önerim)</span>
+    </div>
+    <div class="cv-mock styleC">
+      <div class="cv-name">MEHMET FURKAN ÇALIŞKAN</div>
+      <div class="cv-title">Software Engineer · İstanbul, Türkiye</div>
+      <div class="cv-contact">mfcaliskan@gmail.com &nbsp;|&nbsp; linkedin.com/in/mfc &nbsp;|&nbsp; github.com/mfurkan03</div>
+      <div class="cv-section">EXPERIENCE</div>
+      <div class="clearfix">
+        <span class="cv-org">Acme Corp</span>
+        <span class="cv-date">Jun 2023 – Present</span>
+      </div>
+      <div class="cv-role">Backend Engineer</div>
+      <div class="cv-bullet">Reduced API latency by 40% via Redis caching layer</div>
+      <div class="cv-bullet">Led migration of 3 microservices to FastAPI</div>
+      <div class="cv-section">EDUCATION</div>
+      <div class="clearfix">
+        <span class="cv-org">Boğaziçi Üniversitesi</span>
+        <span class="cv-date">2019 – 2024</span>
+      </div>
+      <div class="cv-role">B.Sc. Computer Engineering</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function select(el) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (window.__companionSelect) window.__companionSelect(el.dataset.choice, el.querySelector('.card-label').innerText.trim());
+}
+</script>
+
+</body>
+</html>

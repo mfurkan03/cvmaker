@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import re
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -223,7 +224,14 @@ async def cv_download(request: Request):
         pdf_bytes = render_cv_pdf(sections, language)
     except (RuntimeError, ValueError) as exc:
         return JSONResponse(status_code=502, content={"error": str(exc)})
-    headers = {"Content-Disposition": "attachment; filename=cv.pdf"}
+    name = sections.get("personal", {}).get("name", "").strip()
+    safe_name = re.sub(r"[^\w\s-]", "", name).strip().replace(" ", "_") if name else "cv"
+    filename = f"{safe_name}_CV.pdf" if safe_name else "cv.pdf"
+    # RFC 5987: use percent-encoded UTF-8 for non-ASCII filenames so the
+    # header value itself stays ASCII (latin-1 safe).
+    from urllib.parse import quote
+    encoded = quote(filename, safe="-_.~")
+    headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"}
     return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf", headers=headers)
 
 
